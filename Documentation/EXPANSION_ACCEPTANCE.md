@@ -85,3 +85,12 @@ Typing-trigger and mixed-format fixes: `/tmp/quill-nested-cursor-gate.log` passe
 At 06:09:21 UTC, the native library window was closed and PID 98450 remained running. At 06:14:16 UTC, after the displayed 16:13 Sydney deadline, the same PID was still running. Reopening the library and Expansion settings showed **Timer ended. Expansion is paused.**, an Enable Expansion button, no active deadline, and both grants still Granted. This exercised the actual 15-minute task without altering its clock or interval.
 
 The next distribution candidate is 0.1.2 (build 3). Local signing/notarization can be prepared while external typing acceptance is pending; publication remains gated on that acceptance.
+
+
+## Notarized 0.1.2 candidate and observed replacement
+
+`/tmp/quill-0.1.2-candidate-gate.log` passed 84 tests and universal Release. Commit/tag `eab9e6a07cce8eeb3b76397e7fbc206481d64983` / `v0.1.2` produced the private candidate at `/Users/nftdannyboy/Library/Developer/Quill-0.1.2-release-20261002`. `/tmp/quill-0.1.2-release.log` completed the universal archive, Developer ID export, accepted app/DMG notarization, stapling, Gatekeeper checks, Sparkle ZIP/feed/notes signatures, expanded ZIP/mounted DMG comparison, checksums and exact-source manifest. The remote tag and GitHub release have not been published.
+
+The notarized candidate was installed atomically at `/Applications/Quill.app` after normal Quit. Installed metadata reports 0.1.2 (3), strict signature and stapled ticket validation passed, and native Settings still shows both grants Granted. The acceptance fixture is active, TextEdit remains the only selected app, and Until Quill Quits / Immediately were explicitly enabled.
+
+Before that install, Quill reported **Expanded Timestamp.** and the named TextEdit test document contained `2026-10-02 at 16:25 `, proving an external replacement succeeded. A local screenshot was preserved at `/tmp/Quill-Expansion-Acceptance/timestamp-expanded.png`, and the document was preserved. Attribution to physical vs directed input and expansion before vs after Space were not established by that observation. The next user check asks for immediate `;now`, the `;sig` expansion form, and native status-menu dismissal against the notarized candidate. Required transaction/focus/Undo/composition acceptance and publication are still pending.
