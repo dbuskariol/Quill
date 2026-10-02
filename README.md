@@ -1,8 +1,8 @@
 # Quill
 
-Quill is a new native macOS 26 snippet library and template editor, built with Swift 6, SwiftUI, Observation, and AppKit. It is the foundation for a modern TextExpander alternative. **Global abbreviation expansion is not implemented yet.**
+Quill is a new native macOS 26 snippet library and template editor, built with Swift 6, SwiftUI, Observation, and AppKit. It is the foundation for a modern TextExpander alternative. **A conservative expansion engine is implemented but has not passed permission-enabled target acceptance. This is not release-ready or full TextExpander parity.**
 
-The runnable app includes five starter snippets across three groups, full-library search (including tags and body), favorites, create/edit/delete with confirmation, local atomic persistence, dry-run fill-in preview, date/time macros, cursor offsets, nested templates, cycle detection, and abbreviation collision diagnostics. It has real Settings, a menu bar entry point, conventional keyboard commands, adaptive appearance, and explicit storage errors. No permission prompts, analytics, or network transmission occur.
+The runnable app includes five starter snippets across three groups, full-library search (including tags and body), favorites, create/edit/delete with confirmation, local atomic persistence, dry-run fill-in preview, date/time macros, cursor offsets, nested templates, cycle detection, and abbreviation collision diagnostics. It has real Settings, a menu bar entry point, conventional keyboard commands, adaptive appearance, and explicit storage errors. Expansion setup requests macOS permissions only through explicit buttons, and monitoring starts only when enabled for allowed apps. No analytics or content upload occurs; updates remain inactive until a signed Quill feed is configured.
 
 ## Run
 
@@ -16,11 +16,11 @@ Debug builds are ad-hoc signed for local development. DerivedData is under `~/Li
 
 ## Use
 
-Choose a group or Favorites, search, select a snippet, then edit the template. **Save Snippet (⌘S)** commits edits locally. **⌘N** creates a snippet; **⇧⌘D** toggles a saved snippet's favorite; **⌘Delete** requests deletion. Unsaved drafts survive selection changes in memory, and quitting warns before discarding them. Revert restores the saved snippet. Menu bar opens the library; Settings controls its visibility and reveals storage.
+Choose a group or Favorites, search, select a snippet, then edit the template. **Save Snippet (⌘S)** commits edits locally. **⌘N** creates a snippet; **⇧⌘D** toggles a saved snippet's favorite; **⌘Delete** requests deletion. Unsaved drafts survive selection changes in memory, and quitting warns before discarding them. Revert restores the saved snippet. Cmd-K opens Quick Actions for search, native fill-ins, resolved copying and library navigation. Repeat Last Copy retains only the resolved text in memory. Settings controls menu/Dock/window behavior, native launch-at-login registration, storage and expansion policy.
 
-Supported Quill syntax (not TextExpander's import syntax): `{{date}}`, `{{time}}`, `{{field:name}}`, `{{snippet:;sig}}`, and `{{cursor}}`. Insert Macro appends at the end. Date is ISO calendar date and time uses 24-hour local time. Fill-in values are literal, never interpreted as macros. Copy Preview is disabled while fields are empty and writes plain text only, with the cursor marker removed. Cursor offset is diagnostic; no external insertion occurs.
+Supported Quill syntax (not TextExpander's import syntax): `{{date}}`, `{{time}}`, `{{field:name}}`, `{{snippet:;sig}}`, and `{{cursor}}`. Insert Macro uses the editor’s current selection or cursor, and appends when no selection exists. Date is ISO calendar date and time uses 24-hour local time. Fill-in values are literal, never interpreted as macros. Copy Preview is disabled while required fields are empty and writes plain text only, with the cursor marker removed. Cursor offset is diagnostic; external cursor placement is implemented for supported AX editors, with runtime acceptance pending.
 
-The JSON library is at `~/Library/Application Support/Quill/library.json`. Invalid templates may be saved for later repair; preview explains their validation errors. Abbreviation collisions are warnings for editing and errors when an ambiguous nested reference is resolved. Search does not change stored content. Group names are starter configuration in this milestone; group CRUD is planned.
+The JSON library is at `~/Library/Application Support/Quill/library.json` by default, or the location explicitly selected in Settings. Invalid templates may be saved for later repair; preview explains their validation errors. Abbreviation collisions are warnings for editing and errors when an ambiguous nested reference is resolved. Search does not change stored content. Manage Groups creates, renames or deletes groups while moving their snippets safely. Every saved change archives the prior file. Settings offers backup, restore, import/export and verified storage relocation. Option-Command-Z undoes the last whole-library change when drafts are clear.
 
 ## Verify and contribute
 
@@ -34,3 +34,17 @@ Setup configures only this repository's author, committer, hook path, and GitHub
 The gate checks script syntax, metadata, whitespace, Swift Testing results with a nonzero count, and an unsigned universal Release build. CI is prepared for macOS 26 Apple silicon and Intel, but has not run remotely. See Documentation/VERIFICATION.md for local observations and gaps.
 
 See Documentation/PRODUCT_BRIEF.md, Documentation/FEATURE_MATRIX.md, and Documentation/ARCHITECTURE.md for scope and the next milestones. Reccy informed layout and engineering conventions; Quill is a separate repository with its own identity and no recording code.
+
+## Expanded templates and expansion setup
+
+Typed controls: `{{input:notes|multiline}}`, `{{input:tone|choice|Formal|Friendly}}`, `{{input:extra|optional}}`, and `{{input:day|date|yyyy-MM-dd}}`. Conditions use `{{if:tone=Formal}}Hello{{else}}Hi{{end}}` and may nest. Custom ICU date formats and day offsets use `{{date:yyyy-MM-dd|7}}`; bounded arithmetic uses `{{math:(2+3)*4}}`. Field values remain literal.
+
+**Library → Import from TextExpander…** imports CSV exports and older `.textexpander` group files through a dedicated review. Common date, cursor, nested-snippet and fill-in macros convert into Quill syntax. Review conversion warnings, choose snippets and skip or replace abbreviation conflicts. The import adds groups, backs up the saved library and supports Undo Last Library Change. Unsupported content stays excluded. See [migration compatibility and research](Documentation/TEXTEXPANDER_IMPORT.md).
+
+Expansion is paused at every launch. In Settings → Expansion, review and explicitly request Accessibility and Input Monitoring access, add an allowed bundle identifier, refresh permission status, then enable for that session. Unknown apps, excluded apps, password fields, secure input and non-direct keyboard input methods are skipped. Supported editors must expose a writable Accessibility selected-text range. Only resolved templates without fill-ins expand automatically today. No clipboard read/paste or synthetic keystrokes are used. Unsupported or changed targets are left untouched where the editor permits; a failed insertion verification asks you to inspect the target and use its native Undo. Permission-enabled acceptance is still required.
+
+Sparkle 2.10.0 supplies the update system. This development build has no feed or public key, shows that prerequisite, and does not start update checks. See [release preparation](Documentation/RELEASE.md) for local packaging and exact external inputs, and [collaboration roadmap](Documentation/COLLABORATION_ROADMAP.md) for sync/team/client milestones.
+
+**Custom Macros** creates named reusable blocks, inserted with `{{macro:NAME}}`. **Insert Macro → Zendesk Placeholder…** inserts message substitutions such as `{{ticket.requester.first_name}}` and custom ticket/user fields. Quill keeps Zendesk tokens unchanged for Zendesk to process; Preview explains this. See [custom macros and Zendesk placeholders](Documentation/MACROS.md).
+
+The app icon follows the dark rounded-square style of the other native apps, with a simple off-white quill and cyan nib. Its source is in `Design`; `script/build-icon.sh` regenerates the macOS icon asset sizes.

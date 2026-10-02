@@ -20,6 +20,24 @@ struct Library: Codable, Equatable, Sendable {
     var version = 1
     var groups: [SnippetGroup]
     var snippets: [Snippet]
+    var macros: [CustomMacro] = [] {
+        didSet { if !macros.isEmpty { version = max(version, 2) } }
+    }
+
+    init(version: Int = 1, groups: [SnippetGroup], snippets: [Snippet], macros: [CustomMacro] = []) {
+        self.version = macros.isEmpty ? version : max(version, 2)
+        self.groups = groups; self.snippets = snippets; self.macros = macros
+    }
+    private enum CodingKeys: String, CodingKey { case version, groups, snippets, macros }
+    init(from decoder: Decoder) throws {
+        let values = try decoder.container(keyedBy: CodingKeys.self)
+        version = try values.decode(Int.self, forKey: .version)
+        guard version == 1 || version == 2 else { throw LibraryError.invalid("Unsupported library version: \(version).") }
+        groups = try values.decode([SnippetGroup].self, forKey: .groups)
+        snippets = try values.decode([Snippet].self, forKey: .snippets)
+        macros = try values.decodeIfPresent([CustomMacro].self, forKey: .macros) ?? []
+        if !macros.isEmpty { version = max(version, 2) }
+    }
 
     static var starter: Library {
         let personal = SnippetGroup(name: "Personal", symbol: "person")
@@ -40,11 +58,16 @@ struct Library: Codable, Equatable, Sendable {
     }
 
     func validate() throws {
-        guard version == 1 else { throw LibraryError.invalid("Unsupported library version: \(version).") }
+        guard version == 1 || version == 2 else { throw LibraryError.invalid("Unsupported library version: \(version).") }
         guard Set(groups.map(\.id)).count == groups.count,
               Set(snippets.map(\.id)).count == snippets.count,
               snippets.allSatisfy({ item in groups.contains { $0.id == item.groupID } }) else {
             throw LibraryError.invalid("The library contains duplicate identifiers or missing groups.")
+        }
+        guard Set(macros.map(\.name)).count == macros.count,
+              Set(macros.map(\.id) + snippets.map(\.id)).count == macros.count + snippets.count,
+              macros.allSatisfy({ !$0.name.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty && $0.name.count <= 128 && !$0.name.contains("{{") && !$0.name.contains("}}") && !$0.name.contains(where: { $0.isNewline }) }) else {
+            throw LibraryError.invalid("Custom macros need unique names and identifiers, with names up to 128 characters.")
         }
     }
 }

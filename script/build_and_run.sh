@@ -5,6 +5,14 @@ DERIVED_DATA="${QUILL_DERIVED_DATA:-$HOME/Library/Developer/Xcode/DerivedData/Qu
 MODE="${1:-run}"
 case "$MODE" in run|--debug|--logs|--telemetry|--verify) ;; *) echo "Usage: $0 [--debug|--logs|--telemetry|--verify]" >&2; exit 2;; esac
 pkill -x Quill >/dev/null 2>&1 || true
+for attempt in {1..30}; do
+  pgrep -x Quill >/dev/null || break
+  sleep 0.1
+done
+if pgrep -x Quill >/dev/null; then
+  echo 'Quill did not stop; refusing to launch a second writer.' >&2
+  exit 1
+fi
 xcodebuild -project "$ROOT_DIR/Quill.xcodeproj" -scheme Quill -configuration Debug -destination "platform=macOS,arch=$(uname -m)" -derivedDataPath "$DERIVED_DATA" build
 APP="$DERIVED_DATA/Build/Products/Debug/Quill.app"
 case "$MODE" in
