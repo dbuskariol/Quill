@@ -1,3 +1,4 @@
+import AppKit
 import Foundation
 import Testing
 @testable import Quill
@@ -86,5 +87,34 @@ struct ExpansionPanelLayoutTests {
         let plain = try result.plainTextResult()
         #expect(plain.text == "Meeting · 1970-01-01\nTopic: Planning 🙂\n\nNotes\n\n\nNext steps\n• ")
         #expect(plain.cursorUTF16Offset == "Meeting · 1970-01-01\nTopic: Planning 🙂\n\nNotes\n".utf16.count)
+    }
+}
+
+
+@Suite(.serialized)
+struct ExpansionPanelFocusTests {
+    @Test(arguments: ["{{field:topic}}", "{{input:topic|optional}}", "{{input:topic|multiline}}", "{{input:topic|choice|One|Two}}", "{{input:topic|date|yyyy-MM-dd}}"])
+    @MainActor func presentationFocusesTheFieldWithoutAUserClick(body: String) async throws {
+        let group = SnippetGroup(name: "Panel test")
+        let snippet = Snippet(groupID: group.id, title: "Panel focus acceptance", abbreviation: ";panel", body: body)
+        let prompt = ExpansionPrompt()
+        defer { prompt.cancel() }
+        prompt.show(snippet: snippet, library: Library(groups: [group], snippets: [snippet]), anchor: NSRect(x: 100, y: 300, width: 0, height: 18)) { _ in }
+        let panel = try #require(NSApp.windows.first { $0.title == snippet.title && $0.isVisible } as? ExpansionInputPanel)
+        for _ in 0..<30 {
+            if let responder = panel.firstResponder as? NSView, responder !== panel.contentView, responder.acceptsFirstResponder { break }
+            try await Task.sleep(for: .milliseconds(20))
+        }
+        #expect(panel.isKeyWindow)
+        let responder = try #require(panel.firstResponder as? NSView)
+        #expect(responder !== panel.contentView)
+        #expect(responder.acceptsFirstResponder)
+        if body == "{{field:topic}}" {
+            let editor = try #require(panel.firstResponder as? NSTextView)
+            #expect(editor.isFieldEditor)
+            #expect(editor.isEditable)
+            #expect(panel.contentLayoutRect.height < 90)
+        }
+        #expect(panel.frame.width == 280)
     }
 }

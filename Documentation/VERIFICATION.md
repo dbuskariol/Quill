@@ -86,3 +86,8 @@ The user retracted the initial failed dismissal report after rechecking, confirm
 ## Published 0.1.2 — 2026-10-02
 
 [Quill 0.1.2](https://github.com/dbuskariol/Quill/releases/tag/v0.1.2) is public, non-prerelease and latest. The annotated tag resolves to `eab9e6a07cce8eeb3b76397e7fbc206481d64983`, matching the notarized manifest. All six assets were downloaded anonymously from the public latest URLs to `/Users/nftdannyboy/Library/Developer/Quill-0.1.2-public-verification-20261002`. Checksums passed and each file exactly matched the verified local release. `/tmp/quill-0.1.2-public-sparkle-verification.log` passed feed/archive/notes signatures, expanded ZIP comparison, nested Developer ID signatures and notarized Gatekeeper assessment. Actual Sparkle installation and its failure/rollback behavior were not exercised by this artifact check.
+
+
+## 0.1.3 input presentation refinement
+
+The user confirmed real Meeting notes expansion in TextEdit, with the owned test document subsequently showing the resolved date and supplied topic. Follow-up initial-focus and spacing changes share a window-ready focus lifecycle between fill-ins and Quick Actions. `/tmp/quill-0.1.3-native-input-gate.log` passed 88 tests across 13 suites, including real nonactivating-panel focus checks for five input kinds, and the unsigned universal Release build. These tests do not establish physical-keyboard Undo or broader editor/input-method acceptance.
