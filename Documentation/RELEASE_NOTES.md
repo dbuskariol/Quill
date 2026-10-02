@@ -1,22 +1,19 @@
-# Quill 0.1.0
+# Quill 0.1.1
 
-The first Quill release brings a native macOS snippet workspace with reusable template blocks and replies prepared for Zendesk.
+Clearer native application controls and cleaner defaults.
 
-- Organize, search and favorite snippets in a native library.
-- Edit reusable custom macros with inline completion from `{{`.
-- Insert Zendesk message placeholders without changing their contents.
-- Import supported TextExpander CSV and `.textexpander` exports through a reviewed conversion.
-- Preview Plain Text and Markdown templates, fill native input controls, and copy formatted replies.
-- Compare and restore saved versions, recover deleted templates and review recovered drafts.
-- Keep the complete library locally in SQLite, with portable backups and reviewed restore.
-- Manage Settings inside the workspace, with menu-bar access and keyboard commands.
+- Choose All Applications or Selected Applications for abbreviation expansion.
+- Add apps through the macOS application chooser, with recognizable names and icons instead of bundle identifiers.
+- Edit exclusions using native +/− controls, Delete, or the Remove Application context menu.
+- Keep application rules consistent when moving an app between the selected and excluded lists.
+- Pause expansion when the last selected app is removed. Password fields and secure input remain protected in every mode.
+- Place the smaller Groups management button on the right of the sidebar header, with additional trailing padding.
+- Use a name fill-in in the starter email signature. Existing saved templates are preserved.
 
-## Install
+## Install or update
 
-Requires macOS 26 or later. The universal app supports Apple silicon and Intel Macs. Open the disk image and drag Quill into Applications before launching it.
+Requires macOS 26 or later. The universal app supports Apple silicon and Intel Macs. Open the disk image and drag Quill into Applications, or choose Check for Updates in Quill.
 
 ## Current limitations
 
-Quill is an early release. Automatic abbreviation expansion is limited to plain-text templates without fill-ins in explicitly allowed, supported Accessibility editors. Permission-enabled expansion and Zendesk rich-editor paste behavior still need broader acceptance. Zendesk resolves its placeholders; Quill does not connect to a Zendesk account. Full WYSIWYG editing, cloud sync and shared team libraries are not included.
-
-Back up an existing library before replacing a development build. Quill supports one current schema and does not migrate older development JSON libraries automatically. Automatic update checks are off by default; manual checks use the signed Quill feed.
+Expansion supports plain-text templates without fill-ins in supported Accessibility editors and starts paused at launch. Permission-enabled expansion and Zendesk rich-editor paste behavior still need broader acceptance. This release uses the current expansion-preferences format; preferences from 0.1.0 reset to Selected Applications with expansion paused. Existing library definitions, history and drafts use the same storage schema.
