@@ -33,7 +33,7 @@ import SwiftUI
         panel.contentView = NSHostingView(rootView: ExpansionForm(snippet: snippet, library: library) { [weak self] result in
             try await self?.finish(result)
         })
-        let screen = NSScreen.screens.first { $0.frame.intersects(anchor) } ?? NSScreen.main
+        let screen = NSScreen.screens.first { $0.frame.contains(NSPoint(x: anchor.midX, y: anchor.midY)) } ?? NSScreen.main
         if let screen {
             panel.setFrame(ExpansionPanelLayout.frame(size: panel.frame.size, anchor: anchor, visibleFrame: screen.visibleFrame), display: false)
         }
