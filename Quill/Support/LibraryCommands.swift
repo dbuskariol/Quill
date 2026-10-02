@@ -12,11 +12,13 @@ struct LibraryCommands: Commands {
             }.keyboardShortcut(",")
         }
         CommandGroup(replacing: .newItem) {
-            Button("New Snippet") { Task { await store.create() } }
+            Button(store.showCustomMacros ? "New Macro" : "New Snippet") {
+                if store.showCustomMacros { store.createMacro() } else { Task { await store.create() } }
+            }
                 .keyboardShortcut("n").disabled(store.isBusy || !store.isLoaded)
         }
         CommandMenu("Library") {
-            Button("Custom Macros…") { store.showCustomMacros = true }.disabled(!store.isLoaded || store.isBusy)
+            Button("Custom Macros") { store.showCustomMacros = true; showQuillWorkspace(openWindow: openWindow) }.disabled(!store.isLoaded || store.isBusy)
             Button("Import from TextExpander…") {
                 showQuillWorkspace(openWindow: openWindow)
                 store.showTextExpanderImport = true
@@ -30,10 +32,10 @@ struct LibraryCommands: Commands {
         CommandMenu("Snippet") {
             Button("Toggle Favorite") { Task { await store.toggleFavorite() } }
                 .keyboardShortcut("d", modifiers: [.command, .shift])
-                .disabled(store.selected == nil || store.isBusy || store.isShowingSettings)
+                .disabled(store.selected == nil || store.isBusy || store.destination != .snippets)
             Button("Delete Snippet…") { store.pendingDelete = store.selected }
                 .keyboardShortcut(.delete, modifiers: .command)
-                .disabled(store.selected == nil || store.isBusy || store.isShowingSettings)
+                .disabled(store.selected == nil || store.isBusy || store.destination != .snippets)
         }
     }
 }

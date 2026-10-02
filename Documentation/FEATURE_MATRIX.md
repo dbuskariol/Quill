@@ -19,7 +19,8 @@ Research checked 2 October 2026 against official TextExpander sources. Status de
 | Cursor position | Partial | UTF-16 preview and AX cursor placement implemented; actual target acceptance and movement actions pending |
 | Key macros and timed delays | Planned | Typed bounded actions, preview, app readiness/focus checks and cancellation |
 | Nested snippets | Implemented (preview) | Missing/ambiguous references and cycles fail; depth/output bounded; no global insertion |
-| Custom reusable macros | Implemented | Dedicated editor, insertion at selection/cursor, shared fields, nested blocks, cycle checks, atomic reference updates on rename, draft/quit protection and v2 persistence |
+| Inline template completion | Implemented | Shared native text-system helper in snippet and custom-macro editors, partial words, snippet/macro dot discovery aliases, common Zendesk paths, UTF-16 ranges and bounded suggestions; custom account schemas are entered manually |
+| Custom reusable macros | Implemented | Searchable workspace editor, insertion at selection/cursor, shared fields, nested blocks, cycle checks, atomic reference updates on rename, draft/quit protection and v2 persistence |
 | Zendesk message placeholders | Implemented locally | Dedicated common/custom-field picker, supported namespace/filter preservation, unchanged escapes and clear preview; Zendesk performs substitution. No live-ticket submission claimed |
 | Abbreviation conflict detection | Partial | Exact matches warn and ambiguous nesting fails; case/scope/boundary/prefix diagnostics planned |
 | Delimiters, case, boundaries, aliases | Partial | Persisted delimiter/case/boundary policy and collision refusal tested; aliases and per-snippet overrides planned |

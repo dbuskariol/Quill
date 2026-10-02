@@ -4,13 +4,16 @@ struct SidebarView: View {
     @Bindable var store: LibraryStore
     @State private var manageGroups = false
     var body: some View {
-        List(selection: Binding<String?>(get: { store.isShowingSettings ? nil : store.filter }, set: { value in
-            if let value { store.isShowingSettings = false; store.filter = value }
+        List(selection: Binding<String?>(get: { store.isShowingSettings ? nil : (store.showCustomMacros ? "macros" : store.filter) }, set: { value in
+            if let value {
+                if value == "macros" { store.destination = .macros }
+                else { store.destination = .snippets; store.filter = value }
+            }
         })) {
             Section {
                 Label("All Snippets", systemImage: "text.quote").tag("all")
                 Label("Favorites", systemImage: "star").tag("favorites")
-                Button { store.showCustomMacros = true } label: { Label("Custom Macros", systemImage: "curlybraces") }.buttonStyle(.plain)
+                Label("Custom Macros", systemImage: "curlybraces").tag("macros")
             }
             Section {
                 ForEach(store.library.groups) { group in

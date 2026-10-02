@@ -8,7 +8,7 @@ struct SnippetEditor: View {
     @State private var fields: [String: String] = [:]
     @State private var saved = false
     @State private var showZendesk = false
-    @State private var textSelection: TextSelection?
+    @State private var templateEditor = TemplateEditorController()
 
     init(store: LibraryStore, original: Snippet) {
         self.store = store
@@ -53,50 +53,35 @@ struct SnippetEditor: View {
                     HStack {
                         Text("Template").font(.headline)
                         Spacer()
-                        Menu("Insert Macro") {
-                            Button("Zendesk Placeholder…") { showZendesk = true }
-                            if !store.library.macros.isEmpty {
-                                Menu("Custom Macros") {
-                                    ForEach(store.library.macros) { macro in Button(macro.name) { insertMacro("{{macro:\(macro.name)}}") } }
-                                }
-                            }
-                            Button("Manage Custom Macros…") { store.showCustomMacros = true }
-                            Divider()
-                            Button("Date") { insertMacro("{{date}}") }
-                            Button("Time") { insertMacro("{{time}}") }
-                            Button("Fill-in Field") { insertMacro("{{field:name}}") }
-                            Button("Multiline Field") { insertMacro("{{input:notes|multiline}}") }
-                            Button("Popup Choice") { insertMacro("{{input:tone|choice|Formal|Friendly}}") }
-                            Button("Optional Field") { insertMacro("{{input:extra|optional}}") }
-                            Button("Date Picker") { insertMacro("{{input:date|date|yyyy-MM-dd}}") }
-                            Button("Conditional Section") { insertMacro("{{if:tone=Formal}}Hello{{else}}Hi{{end}}") }
-                            Button("Date in Seven Days") { insertMacro("{{date:yyyy-MM-dd|7}}") }
-                            Button("Arithmetic") { insertMacro("{{math:(2+3)*4}}") }
-                            Button("Cursor Position") { insertMacro("{{cursor}}") }
-                        }
+                        TemplateInsertionMenu(library: store.library, excludingSnippet: original.id, insert: insertMacro, showZendesk: { showZendesk = true })
                     }
-                    TextEditor(text: $draft.body, selection: $textSelection).font(.system(.body, design: .monospaced))
-                        .frame(minHeight: 170).padding(8).background(.background, in: RoundedRectangle(cornerRadius: 8))
-                        .overlay(RoundedRectangle(cornerRadius: 8).stroke(.separator))
-                        .accessibilityLabel("Snippet template")
+                    TemplateEditor(text: $draft.body, library: store.library, controller: templateEditor, excludingSnippet: original.id, accessibilityName: "Snippet template")
+                        .frame(height: 220)
                 }
                 if !conflicts.isEmpty {
                     Label("Abbreviation also used by: \(conflicts.map(\.title).joined(separator: ", "))", systemImage: "exclamationmark.triangle")
                         .foregroundStyle(.orange).font(.callout)
                 }
                 PreviewView(result: result, fields: $fields, actions: store.quickActions)
+
+            }.padding(24)
+        }
+        .safeAreaInset(edge: .bottom) {
+            VStack(spacing: 0) {
+                Divider()
                 HStack {
                     if changed || saved {
                         Text(changed ? "Unsaved changes" : "Saved").font(.caption).foregroundStyle(.secondary)
                     }
                     Spacer()
-                    Button("Revert") { if let current = store.selected { textSelection = nil; draft = current } }.disabled(!changed)
+                    Button("Revert") { if let current = store.selected { draft = current } }.disabled(!changed)
                     Button("Save Snippet") {
                         Task { if await store.save(draft) { saved = true } }
                     }.keyboardShortcut("s").buttonStyle(.borderedProminent)
                         .disabled(!changed || store.isBusy || draft.title.trimmingCharacters(in: .whitespaces).isEmpty)
                 }
-            }.padding(24)
+                    .padding(.horizontal, 24).padding(.vertical, 12)
+            }.background(.bar)
         }
         .navigationTitle(draft.title)
         .disabled(store.isBusy)
@@ -105,5 +90,5 @@ struct SnippetEditor: View {
         .onChange(of: original.isFavorite) { _, value in draft.isFavorite = value }
         .onChange(of: original.body) { _, value in if store.drafts[original.id] == nil { draft.body = value } }
     }
-    private func insertMacro(_ token: String) { insertTemplateText(token, into: &draft.body, selection: &textSelection) }
+    private func insertMacro(_ token: String) { templateEditor.insert(token) }
 }
