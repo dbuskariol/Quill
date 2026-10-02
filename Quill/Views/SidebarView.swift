@@ -20,14 +20,17 @@ struct SidebarView: View {
                     Label(group.name, systemImage: group.symbol).tag(group.id.uuidString)
                 }
             } header: {
-                HStack(alignment: .firstTextBaseline, spacing: 8) {
+                HStack(alignment: .center, spacing: 8) {
                     Text("Groups")
+                    Spacer()
                     Button { manageGroups = true } label: {
-                        Image(systemName: "folder.badge.gearshape").font(.body)
+                        Image(systemName: "folder.badge.gearshape")
+                            .font(.system(size: 12))
+                            .frame(width: 24, height: 20)
                     }.buttonStyle(.borderless).help("Manage Groups").accessibilityLabel("Manage Groups")
                         .disabled(!store.isLoaded || store.isBusy)
-                    Spacer()
                 }
+                .padding(.trailing, 8)
             }
         }
         .sheet(isPresented: $manageGroups) { GroupManagementView(store: store) }

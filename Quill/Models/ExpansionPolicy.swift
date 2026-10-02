@@ -1,13 +1,42 @@
 import Foundation
 
+struct ExpansionApplication: Codable, Equatable, Identifiable, Sendable {
+    let id: String
+    var name: String
+    var path: String?
+}
+
 struct ExpansionPolicy: Codable, Equatable, Sendable {
+    enum ApplicationScope: String, Codable, CaseIterable, Identifiable {
+        case all, selected
+        var id: Self { self }
+        var title: String { self == .all ? "All Applications" : "Selected Applications" }
+    }
     var delimiters = " \t\n"
     var caseSensitive = true
     var requiresWordBoundary = true
-    var excludedBundleIDs = ["com.agilebits.onepassword7", "com.1password.1password", "com.apple.Terminal", "com.googlecode.iterm2"]
-    var allowedBundleIDs: [String] = []
+    var applicationScope = ApplicationScope.selected
+    var excludedApplications: [ExpansionApplication] = [
+        .init(id: "com.1password.1password", name: "1Password"),
+        .init(id: "com.apple.Terminal", name: "Terminal"),
+        .init(id: "com.googlecode.iterm2", name: "iTerm")
+    ]
+    var selectedApplications: [ExpansionApplication] = []
+    var hasApplicationScope: Bool { applicationScope == .all || !selectedApplications.isEmpty }
+
     func allows(_ bundleID: String) -> Bool {
-        !bundleID.isEmpty && !excludedBundleIDs.contains(bundleID) && allowedBundleIDs.contains(bundleID)
+        !bundleID.isEmpty && !excludedApplications.contains { $0.id == bundleID }
+        && (applicationScope == .all || selectedApplications.contains { $0.id == bundleID })
+    }
+    mutating func add(_ applications: [ExpansionApplication], excluding: Bool) {
+        for app in applications {
+            selectedApplications.removeAll { $0.id == app.id }
+            excludedApplications.removeAll { $0.id == app.id }
+            if excluding { excludedApplications.append(app) }
+            else { selectedApplications.append(app) }
+        }
+        selectedApplications.sort { $0.name.localizedStandardCompare($1.name) == .orderedAscending }
+        excludedApplications.sort { $0.name.localizedStandardCompare($1.name) == .orderedAscending }
     }
 }
 

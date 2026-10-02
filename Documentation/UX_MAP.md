@@ -33,4 +33,6 @@ The completion bridge follows Apple's [NSTextView completion contract](https://d
 
 Format lives with each template’s metadata. Markdown shares the source editor and token helper, with native formatted preview and Copy As nearby. History stays beside Save; deletion recovery, retention, complete backups and reviewed whole-library restore belong in Library commands/Settings → Library. Backups and JSON exports are explicit choices because their contents differ.
 
-The group-management control sits beside the Groups section title with an 8-point gap and text-baseline alignment. It shares the label’s placement instead of extending to the sidebar edge.
+The group-management control is right-aligned in the Groups header. Its 12-point symbol sits in a 24-by-20-point target, with 8 points of additional trailing padding.
+
+Expansion Settings offers All Applications or Selected Applications. Selected apps and exclusions use named, icon-bearing rows with native multi-selection, +/− controls, Delete and a Remove Application context menu. The + button opens a native application-only chooser and supports choosing several apps. Adding an app to either list moves it out of the other; removing an exclusion does not implicitly select that app in Selected Applications mode. Empty selected scope pauses active expansion. Secure input and password-field protections apply independently of both lists.

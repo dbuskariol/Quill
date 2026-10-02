@@ -28,9 +28,35 @@ struct AbbreviationMatcherTests {
         #expect(AbbreviationMatcher.match(text: ";x ", caret: 99, library: items, policy: .init()) == nil)
         var policy = ExpansionPolicy()
         #expect(!policy.allows("com.apple.TextEdit"))
-        policy.allowedBundleIDs = ["com.apple.TextEdit", "com.apple.Terminal"]
+        policy.selectedApplications = [.init(id: "com.apple.TextEdit", name: "TextEdit"), .init(id: "com.apple.Terminal", name: "Terminal")]
         #expect(policy.allows("com.apple.TextEdit"))
         #expect(!policy.allows("com.apple.Terminal"))
+    }
+    @Test func allApplicationsRespectsEditableExclusionsAndPersists() throws {
+        var policy = ExpansionPolicy()
+        policy.applicationScope = .all
+        #expect(policy.hasApplicationScope)
+        #expect(policy.allows("com.apple.TextEdit"))
+        #expect(!policy.allows(""))
+        #expect(!policy.allows("com.apple.Terminal"))
+        policy.excludedApplications.removeAll { $0.id == "com.apple.Terminal" }
+        #expect(policy.allows("com.apple.Terminal"))
+        policy.add([.init(id: "com.apple.TextEdit", name: "TextEdit")], excluding: true)
+        #expect(!policy.allows("com.apple.TextEdit"))
+        #expect(try JSONDecoder().decode(ExpansionPolicy.self, from: JSONEncoder().encode(policy)) == policy)
+    }
+    @Test func movingApplicationBetweenListsHasOneRule() {
+        var policy = ExpansionPolicy()
+        let app = ExpansionApplication(id: "com.apple.TextEdit", name: "TextEdit")
+        policy.add([app, app], excluding: false)
+        #expect(policy.selectedApplications.count == 1)
+        #expect(policy.allows(app.id))
+        policy.add([app], excluding: true)
+        #expect(policy.selectedApplications.isEmpty)
+        #expect(!policy.allows(app.id))
+        policy.add([app], excluding: false)
+        #expect(!policy.excludedApplications.contains { $0.id == app.id })
+        #expect(policy.allows(app.id))
     }
     @Test @MainActor func controllerNeverEnablesOrRequestsPermissionOnLaunch() {
         let suite = "QuillTests.\(UUID().uuidString)"
@@ -38,7 +64,7 @@ struct AbbreviationMatcherTests {
         defer { defaults.removePersistentDomain(forName: suite) }
         let controller = ExpansionController(store: LibraryStore(), defaults: defaults)
         #expect(!controller.isEnabled)
-        #expect(controller.policy.allowedBundleIDs.isEmpty)
+        #expect(controller.policy.selectedApplications.isEmpty)
         controller.pause()
         #expect(!controller.isEnabled)
     }

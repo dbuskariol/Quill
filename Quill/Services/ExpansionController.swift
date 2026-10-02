@@ -4,11 +4,20 @@ import Carbon
 import Observation
 
 @MainActor @Observable final class ExpansionController {
-    var policy: ExpansionPolicy { didSet { persistPolicy(); pending?.cancel() } }
+    var policy: ExpansionPolicy {
+        didSet {
+            persistPolicy()
+            pending?.cancel()
+            if isEnabled && !policy.hasApplicationScope {
+                pause()
+                status = "Paused. Choose an application or select All Applications."
+            }
+        }
+    }
     private(set) var isEnabled = false
     private(set) var accessibilityGranted = false
     private(set) var inputGranted = false
-    private(set) var status = "Paused. Set up permissions and allow an app before enabling."
+    private(set) var status = "Paused. Set up permissions and choose where expansion runs."
     private let store: LibraryStore
     private let defaults: UserDefaults
     private var tap: CFMachPort?
@@ -34,7 +43,7 @@ import Observation
     func enable() {
         refreshPermissions()
         guard accessibilityGranted, inputGranted else { status = "Grant both permissions through Setup, then refresh. No monitoring started."; return }
-        guard !policy.allowedBundleIDs.isEmpty else { status = "Choose at least one allowed application first."; return }
+        guard policy.hasApplicationScope else { status = "Choose an application or select All Applications first."; return }
         guard tap == nil else { return }
         let mask = CGEventMask(1 << CGEventType.keyDown.rawValue)
         let callback: CGEventTapCallBack = { _, type, event, context in
@@ -53,7 +62,7 @@ import Observation
         self.tap = tap; self.source = source
         CFRunLoopAddSource(CFRunLoopGetMain(), source, .commonModes)
         CGEvent.tapEnable(tap: tap, enable: true)
-        isEnabled = true; status = "Enabled in allowed applications. Secure input and unsupported editors are skipped."
+        isEnabled = true; status = "Expansion is enabled. Excluded apps, secure input and unsupported editors are skipped."
     }
     func pause() {
         pending?.cancel(); pending = nil
