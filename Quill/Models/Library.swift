@@ -39,7 +39,7 @@ struct Library: Codable, Equatable, Sendable {
         let templates = SnippetGroup(name: "Templates", symbol: "curlybraces")
         return Library(groups: [personal, work, templates], snippets: [
             Snippet(groupID: personal.id, title: "Email signature", abbreviation: ";sig",
-                    body: "Best regards,\nDaniel", tags: ["email"], isFavorite: true),
+                    body: "Best regards,\n{{field:your name}}", tags: ["email"], isFavorite: true),
             Snippet(groupID: work.id, title: "Friendly follow-up", abbreviation: ";follow",
                     body: "Hi {{field:name}},\n\nJust following up on our conversation. Let me know if you have any questions.\n\n{{snippet:;sig}}", tags: ["email", "follow-up"], isFavorite: true),
             Snippet(groupID: templates.id, title: "Meeting notes", abbreviation: ";notes",

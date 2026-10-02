@@ -60,7 +60,7 @@ See [content, storage, and history](Documentation/CONTENT_AND_HISTORY.md) for re
 
 Quill uses SwiftUI split views, system toolbars, menus, SF Symbols, native panels, and a narrow AppKit text editor. Settings manages storage, history, appearance, menu/Dock behavior, launch at login, and expansion policy within the existing workspace.
 
-Abbreviation expansion starts paused on every launch. Explicit setup and session enablement are required, and only allowed applications with supported writable Accessibility text ranges can receive an expansion. The current engine handles plain-text root templates without fill-ins; secure input, password fields, unknown apps, and non-direct input methods are excluded. Permission-enabled target acceptance remains open.
+Abbreviation expansion starts paused on every launch. Explicit setup and session enablement are required, and only allowed applications with supported writable Accessibility text ranges can receive an expansion. The current engine handles plain-text root templates without fill-ins; secure input, password fields, excluded apps, and non-direct input methods are skipped. Choose All Applications or Selected Applications, then manage app selections and exclusions through the native app chooser and +/− controls. Permission-enabled target acceptance remains open.
 
 ## Architecture
 

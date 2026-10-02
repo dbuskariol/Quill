@@ -46,3 +46,7 @@ Native QA exposed a confirmation lifetime bug: the pending JSON import was clear
 Full WYSIWYG, attachments, arbitrary rich-format fidelity, actual Zendesk paste/channel acceptance and permission-enabled external expansion remain unverified/future work. Markdown root templates are excluded from automatic Accessibility expansion.
 
 An existing SQLite file without saved state is surfaced and preserved, never replaced with starters. Group management now uses standard 8-point header spacing and baseline alignment beside the Groups title.
+
+## Application selection and sidebar refinement — 2026-10-02
+
+The final local gate passed 78 Swift Testing tests and an unsigned universal Release build. New policy tests cover all-apps scope, editable exclusions, empty identifiers, Codable persistence, duplicate selection and moving an app between opposing lists. Native QA used a separate app identity and temporary library: selected-app addition through the macOS app chooser, selected-app removal, exclusion removal and addition, and switching to All Applications were exercised. App names/icons and the right-aligned, smaller Groups control were visually inspected. A fresh library showed the neutral signature name fill-in. No OS expansion permission was requested or monitoring enabled during this QA; external-target acceptance remains separate. Existing user templates and drafts were not modified.

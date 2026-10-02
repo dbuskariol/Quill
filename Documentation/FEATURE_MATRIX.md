@@ -25,7 +25,7 @@ Research checked 2 October 2026 against official TextExpander sources. Status de
 | Zendesk message placeholders | Implemented locally | Dedicated common/custom-field picker, supported namespace/filter preservation, unchanged escapes and clear preview; Zendesk performs substitution. No live-ticket submission claimed |
 | Abbreviation conflict detection | Partial | Exact matches warn and ambiguous nesting fails; case/scope/boundary/prefix diagnostics planned |
 | Delimiters, case, boundaries, aliases | Partial | Persisted delimiter/case/boundary policy and collision refusal tested; aliases and per-snippet overrides planned |
-| App scope and profiles | Partial | Explicit persisted allowlist and exclusion precedence; unknown apps excluded. Per-app rule overrides and group scopes planned |
+| App scope and profiles | Partial | All Applications or Selected Applications with named app rows, a native app chooser, editable exclusions and exclusion precedence. Per-app rule overrides and group scopes planned |
 | Scripts | Planned | Explicit per-script trust bound to content hash, no trust on import, bounded execution and result preview |
 | TextExpander import/export | Partial | Dedicated multi-file CSV/legacy-group import, original/converted preview, warnings, conflict handling, backup and undo. Common macros convert; unsupported items excluded. TextExpander export and broader formats planned; see migration guide |
 | Autocorrect and starter libraries | Partial | Five Quill samples implemented; curated opt-in starters and autocorrect rules planned |
