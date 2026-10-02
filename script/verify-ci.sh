@@ -4,7 +4,7 @@ ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 DERIVED_DATA="${QUILL_CI_DERIVED_DATA:-$HOME/Library/Developer/Xcode/DerivedData/Quill/CI}"
 RESULT="$DERIVED_DATA/Results/$(date +%Y%m%d-%H%M%S).xcresult"
 mkdir -p "$(dirname "$RESULT")"
-for script in "$ROOT_DIR"/script/*.sh "$ROOT_DIR"/.githooks/*; do bash -n "$script"; done
+while IFS= read -r script; do bash -n "$ROOT_DIR/$script"; done < <(git -C "$ROOT_DIR" ls-files --cached --others --exclude-standard "script/*.sh" "script/**/*.sh" ".githooks/*")
 plutil -lint "$ROOT_DIR/Configuration/Quill-Info.plist"
 git -C "$ROOT_DIR" diff --check
 xcodebuild -project "$ROOT_DIR/Quill.xcodeproj" -scheme Quill -configuration Debug -destination "platform=macOS,arch=$(uname -m)" -derivedDataPath "$DERIVED_DATA" -resultBundlePath "$RESULT" test
