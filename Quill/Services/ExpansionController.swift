@@ -133,8 +133,8 @@ import Observation
         let characters = String(utf16CodeUnits: units, count: count)
         let key = event.getIntegerValueField(.keyboardEventKeycode)
         // IME candidate keystrokes are not committed text. Inspect only after Return commits.
-        guard isDirectKeyboardLayout() || key == 36 else { return }
-        guard policy.trigger == .immediately || characters.contains(where: { policy.delimiters.contains($0) }) || (key == 36 && policy.delimiters.contains("\n")) || (key == 48 && policy.delimiters.contains("\t")) else { return }
+        guard isDirectKeyboardLayout() || Self.isCompositionCommit(key) else { return }
+        guard Self.isTextTrigger(key: key, characters: characters, policy: policy) else { return }
         let pid = app.processIdentifier
         guard let originalFocus = AccessibilityTextTarget.focusedElement(pid: pid) else { return }
         pending = Task { [weak self] in
@@ -193,6 +193,30 @@ import Observation
         store.statistics.recordExpansion(outputCharacters: output.text.count, abbreviationCharacters: snippet.abbreviation.count)
         status = "Expanded \(snippet.title)."
     }
+    private static let nonTextKeys: Set<Int64> = Set([
+        kVK_Delete, kVK_ForwardDelete, kVK_Escape, kVK_Help,
+        kVK_LeftArrow, kVK_RightArrow, kVK_UpArrow, kVK_DownArrow,
+        kVK_Home, kVK_End, kVK_PageUp, kVK_PageDown, kVK_ANSI_KeypadClear,
+        kVK_JIS_Kana, kVK_JIS_Eisu,
+        kVK_F1, kVK_F2, kVK_F3, kVK_F4, kVK_F5, kVK_F6, kVK_F7, kVK_F8,
+        kVK_F9, kVK_F10, kVK_F11, kVK_F12, kVK_F13, kVK_F14, kVK_F15,
+        kVK_F16, kVK_F17, kVK_F18, kVK_F19, kVK_F20
+    ].map(Int64.init))
+
+    private static func isCompositionCommit(_ key: Int64) -> Bool {
+        key == kVK_Return || key == kVK_ANSI_KeypadEnter
+    }
+
+    static func isTextTrigger(key: Int64, characters: String, policy: ExpansionPolicy) -> Bool {
+        guard !nonTextKeys.contains(key) else { return false }
+        // Text targets remain authoritative; hardware CGEvents need not carry Unicode text.
+        if policy.trigger == .immediately { return true }
+        return characters.contains(where: { policy.delimiters.contains($0) }) ||
+            (isCompositionCommit(key) && policy.delimiters.contains("\n")) ||
+            (key == kVK_Tab && policy.delimiters.contains("\t")) ||
+            (key == kVK_Space && policy.delimiters.contains(" "))
+    }
+
     private func isDirectKeyboardLayout() -> Bool {
         guard let input = TISCopyCurrentKeyboardInputSource()?.takeRetainedValue(),
               let type = TISGetInputSourceProperty(input, kTISPropertyInputSourceType) else { return false }

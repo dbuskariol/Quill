@@ -53,7 +53,7 @@ The final local gate passed 78 Swift Testing tests and an unsigned universal Rel
 
 ## Current expansion repair acceptance
 
-See [EXPANSION_ACCEPTANCE.md](EXPANSION_ACCEPTANCE.md) for the signed interactive identity, observed native workflows and required external expansion gate. Current-source verification passed 80 tests and the universal Release build. The interactive app is installed at `/Applications/Quill.app`; permission confirmation and real automatic replacement remain pending. No next release has been cut.
+See [EXPANSION_ACCEPTANCE.md](EXPANSION_ACCEPTANCE.md) for the signed interactive identity, observed native workflows and required external expansion gate. Current-source verification passed 80 tests and the universal Release build. The interactive app is installed at `/Applications/Quill.app`; both grants are confirmed, while real automatic replacement remains pending. No next release has been cut.
 
 Expansion duration/background repair: `/tmp/quill-background-final-gate.log` passed 81 tests and universal Release. `/tmp/quill-duration-install.log` built, strictly verified and installed the signed app through the Run script. Both grants survived changed-binary reinstall. Native Across Launches resumption, timed deadline, hide-Dock reachability, continued process after window close, library reopen and login registration/unregistration were observed. Physical keyboard and external expansion transactions remain pending; no release readiness claim.
 
@@ -63,3 +63,13 @@ Expansion duration/background repair: `/tmp/quill-background-final-gate.log` pas
 `/tmp/quill-cursor-boundaries-gate.log` passed 82 tests in 11 suites plus the universal Release build. Markdown expansion now shares its visible-text and cursor projection with preview; native source mapping and cursor regression cases cover list prefixes, entities/Unicode, links, code and protected literal content. Fill-in submissions retain the existing form and answers on failure, and invalidated transaction IDs cannot write after a policy change or pause. Native external transaction acceptance remains pending. The README now includes four actual native screenshots captured against a separate sample library.
 
 The final interactive gate `/tmp/quill-final-interactive-gate.log` passed the same 82 tests and universal Release. The signed repair was installed and strictly verified; both permission grants survived. The native Markdown cursor diagnostic was observed and the disposable edit reverted. Status text now recreates its selectable accessibility node on state changes; Enabled is reported consistently by parent and child.
+
+
+## Typing triggers and mixed-format references — 2026-10-02
+
+`/tmp/quill-typing-trigger-gate.log` passed 83 tests and universal Release. Immediate expansion now excludes navigation, deletion, function keys and input-source toggles; hardware events with no Unicode payload remain eligible for authoritative AX text matching. Delimiter mode recognizes native Space, Tab, Return and keypad Enter.
+
+`/tmp/quill-nested-cursor-gate.log` passed 84 tests in 11 suites and universal Release. Mixed-format Markdown-to-plain references project the cursor through the complete semantic document, rather than parsing a truncated prefix. Tests exercise reusable macros, nested snippet links, plain-to-Markdown literal blocks, and escaped literal fields containing emoji and Zendesk expressions. GitHub CI for commit `2d7daed` completed successfully at [run 36971587942](https://github.com/dbuskariol/Quill/actions/runs/36971587942); the subsequent trigger/nested-cursor changes have passed the local gate.
+
+
+The actual 15-minute expansion session expired while its library window was closed. The same process remained alive; reopening after the displayed deadline showed Timer ended, expansion paused, and both grants still Granted. See the timestamped acceptance record. No clock override was used.

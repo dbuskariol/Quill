@@ -76,3 +76,12 @@ Directed typing was retried after launching TextEdit in the foreground through t
 `/tmp/quill-final-interactive-gate.log` passed 82 tests and universal Release after the final status-accessibility change. `/tmp/quill-cursor-transaction-install.log` built and installed the signed repair; the installed bundle passed strict nested verification with the same Developer ID designated requirement. Both grants still report Granted. Native preview of `**Reply**{{cursor}}` reports Cursor after 5 characters; the temporary edit was reverted. The status accessibility parent now changes with the visible status instead of retaining its old Paused label.
 
 A real 15-minute session was enabled in the isolated fixture at approximately 15:58 Sydney time, with a displayed 16:13 stop time and PID 98450 confirmed running at 05:59:06 UTC. Expiry observation is pending; no shortened timer or permission override was used.
+
+Typing-trigger and mixed-format fixes: `/tmp/quill-nested-cursor-gate.log` passed 84 tests and universal Release. Navigation/deletion/function/source-toggle keys cannot trigger immediate matching; delimiter commits include keypad Enter. Nested Markdown blocks now use the same complete-document cursor projection when inserted into plain templates. Native external typing acceptance remains separate.
+
+
+## Observed timer expiry with the library closed
+
+At 06:09:21 UTC, the native library window was closed and PID 98450 remained running. At 06:14:16 UTC, after the displayed 16:13 Sydney deadline, the same PID was still running. Reopening the library and Expansion settings showed **Timer ended. Expansion is paused.**, an Enable Expansion button, no active deadline, and both grants still Granted. This exercised the actual 15-minute task without altering its clock or interval.
+
+The next distribution candidate is 0.1.2 (build 3). Local signing/notarization can be prepared while external typing acceptance is pending; publication remains gated on that acceptance.
