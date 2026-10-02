@@ -16,7 +16,11 @@ import Observation
             guard result.format == .markdown, style != .markdown else { return copy(result.text) }
             let document = try MarkdownDocument(result.text)
             if style == .plainText { return copy(document.plainText) }
-            let attributed = FormattedContent.attributed(document)
+            let attributed = NSMutableAttributedString(attributedString: FormattedContent.attributed(document))
+            let range = NSRange(location: 0, length: attributed.length)
+            // Clipboard content inherits the destination's colors, not Quill's appearance.
+            attributed.removeAttribute(.foregroundColor, range: range)
+            attributed.removeAttribute(.backgroundColor, range: range)
             let rtf = try attributed.data(from: NSRange(location: 0, length: attributed.length), documentAttributes: [.documentType: NSAttributedString.DocumentType.rtf])
             return write(Payload(text: document.plainText, html: Data(document.html.utf8), rtf: rtf))
         } catch { message = "Could not prepare formatted content: \(error.localizedDescription)"; return false }

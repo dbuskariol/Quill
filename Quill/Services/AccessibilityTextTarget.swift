@@ -37,7 +37,6 @@ import Carbon
     }
 
     func replace(_ match: ExpansionMatch, with result: RenderResult) throws {
-        guard result.fields.isEmpty else { throw LibraryError.invalid("Fill-ins require the quick action form; automatic expansion left the abbreviation untouched.") }
         guard let current = Self.capture(pid: pid), CFEqual(element, current.element), current.text == text,
               current.selection.location == selection.location, current.selection.length == selection.length, match.range.location >= 0,
               match.range.location + match.range.length == selection.location,

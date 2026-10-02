@@ -16,12 +16,28 @@ struct AbbreviationMatcherTests {
     @Test func respectsCaseBoundaryAndAmbiguity() {
         let items = library(["sig", "SIG"])
         #expect(AbbreviationMatcher.match(text: "sig ", caret: 4, library: items, policy: .init()) != nil)
-        var policy = ExpansionPolicy(); policy.caseSensitive = false
+        var policy = ExpansionPolicy(); policy.trigger = .delimiter; policy.caseSensitive = false
         #expect(AbbreviationMatcher.match(text: "sig ", caret: 4, library: items, policy: policy) == nil)
         #expect(AbbreviationMatcher.match(text: "xsig ", caret: 5, library: library(["sig"]), policy: .init()) == nil)
         policy.requiresWordBoundary = false
         #expect(AbbreviationMatcher.match(text: "xsig ", caret: 5, library: library(["sig"]), policy: policy) != nil)
         #expect(AbbreviationMatcher.match(text: "sig", caret: 3, library: items, policy: policy) == nil)
+    }
+    @Test func immediatelyMatchesLastCharacterWithoutDelimiter() throws {
+        let text = "🙂 ;café"
+        let match = try #require(AbbreviationMatcher.match(text: text, caret: text.utf16.count,
+                                                          library: library([";café"]), policy: .init()))
+        #expect(match.range == NSRange(location: 3, length: 5))
+        #expect(match.delimiter.isEmpty)
+        #expect(AbbreviationMatcher.match(text: ";caf", caret: 4, library: library([";café"]), policy: .init()) == nil)
+    }
+    @Test func overlappingAbbreviationsWaitForDisambiguation() {
+        let items = library([";sig", ";signature"])
+        #expect(AbbreviationMatcher.match(text: ";sig", caret: 4, library: items, policy: .init()) == nil)
+        #expect(AbbreviationMatcher.match(text: ";sig ", caret: 5, library: items, policy: .init()) != nil)
+        #expect(AbbreviationMatcher.match(text: ";signature", caret: 10, library: items, policy: .init()) != nil)
+        var policy = ExpansionPolicy(); policy.trigger = .delimiter
+        #expect(AbbreviationMatcher.match(text: ";signature", caret: 10, library: items, policy: policy) == nil)
     }
     @Test func refusesInvalidRangesAndUnknownApps() {
         let items = library([";x"])
@@ -68,4 +84,27 @@ struct AbbreviationMatcherTests {
         controller.pause()
         #expect(!controller.isEnabled)
     }
+    @Test @MainActor func durationIsExplicitAndPauseDisarmsLaunchResume() {
+        let suite = "QuillTests.\(UUID().uuidString)"
+        let defaults = UserDefaults(suiteName: suite)!
+        defer { defaults.removePersistentDomain(forName: suite) }
+        let controller = ExpansionController(store: LibraryStore(), defaults: defaults)
+        #expect(controller.duration == .untilQuit)
+        #expect(!controller.isEnabled)
+        controller.duration = .always
+        // Selecting a mode alone never enables monitoring.
+        #expect(!controller.isEnabled)
+        #expect(!defaults.bool(forKey: "expansionAcrossLaunches"))
+        defaults.set(true, forKey: "expansionAcrossLaunches")
+        controller.pause()
+        #expect(!defaults.bool(forKey: "expansionAcrossLaunches"))
+        let reopened = ExpansionController(store: LibraryStore(), defaults: defaults)
+        #expect(reopened.duration == .always)
+        #expect(!reopened.isEnabled)
+        #expect(reopened.endsAt == nil)
+        #expect(ExpansionDuration.fifteenMinutes.interval == 900)
+        #expect(ExpansionDuration.oneHour.interval == 3600)
+        #expect(ExpansionDuration.always.interval == nil)
+    }
+
 }

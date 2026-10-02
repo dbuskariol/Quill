@@ -32,9 +32,7 @@ struct PreviewView: View {
                     Label("Zendesk fills these placeholders when it processes your comment. Quill copies them unchanged.", systemImage: "curlybraces")
                         .font(.callout).foregroundStyle(.secondary)
                 }
-                ForEach(preview.fields, id: \.self) { name in
-                    fieldControl(preview.fieldDefinitions.first { $0.name == name } ?? TemplateField(name: name))
-                }
+                TemplateFieldsView(result: preview, fields: $fields)
                 if preview.format == .markdown {
                     if let document = try? MarkdownDocument(preview.text) {
                         FormattedPreview(document: document).frame(height: 200)
@@ -44,8 +42,8 @@ struct PreviewView: View {
                     Text(preview.text.isEmpty ? "Your preview will appear here." : preview.text)
                         .id(preview.text).textSelection(.enabled).frame(maxWidth: .infinity, minHeight: 80, alignment: .topLeading)
                 }
-                if let offset = preview.cursorUTF16Offset, preview.format == .plainText {
-                    Text("Cursor after \((preview.text as NSString).substring(to: offset).count) characters")
+                if preview.cursorUTF16Offset != nil, let visible = try? preview.plainTextResult(), let offset = visible.cursorUTF16Offset {
+                    Text("Cursor after \((visible.text as NSString).substring(to: offset).count) characters")
                         .font(.caption).foregroundStyle(.secondary)
                         .help("Used during expansion. Copy Preview copies text only.")
                 }
@@ -55,35 +53,6 @@ struct PreviewView: View {
         }.padding(16).background(.quaternary.opacity(0.4), in: RoundedRectangle(cornerRadius: 10))
             .onChange(of: (try? result.get())?.format) { _, _ in copied = false; copyAttempted = false }
             .onChange(of: resultText) { _, _ in copied = false; copyAttempted = false }
-    }
-    @ViewBuilder private func fieldControl(_ field: TemplateField) -> some View {
-        let binding = Binding(get: { fields[field.name, default: ""] }, set: { fields[field.name] = $0 })
-        switch field.kind {
-        case .singleLine, .optional:
-            TextField(field.kind == .optional ? "\(field.name) (optional)" : field.name, text: binding)
-                .textFieldStyle(.roundedBorder).accessibilityLabel("Preview field: \(field.name)")
-        case .multiline:
-            VStack(alignment: .leading) {
-                Text(field.name).font(.caption)
-                TextEditor(text: binding).frame(minHeight: 70).accessibilityLabel("Preview field: \(field.name)")
-            }
-        case let .choice(choices):
-            Picker(field.name, selection: binding) {
-                Text("Choose…").tag("")
-                ForEach(choices, id: \.self) { Text($0).tag($0) }
-            }
-        case .date:
-            DatePicker(field.name, selection: Binding(get: {
-                dateFormatter.date(from: binding.wrappedValue) ?? .now
-            }, set: { binding.wrappedValue = dateFormatter.string(from: $0) }), displayedComponents: .date)
-            if binding.wrappedValue.isEmpty {
-                Button("Use Today for \(field.name)") { binding.wrappedValue = dateFormatter.string(from: .now) }
-            }
-        }
-    }
-    private var dateFormatter: DateFormatter {
-        let formatter = DateFormatter(); formatter.locale = Locale(identifier: "en_US_POSIX"); formatter.dateFormat = "yyyy-MM-dd"
-        return formatter
     }
     private var resultText: String { (try? result.get().text) ?? "" }
 }

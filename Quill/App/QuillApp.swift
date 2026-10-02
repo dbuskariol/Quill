@@ -37,43 +37,19 @@ struct QuillApp: App {
         QuillLaunchConfiguration.libraryURL))
     @State private var preferences = AppPreferences()
     @State private var updates = SoftwareUpdateController()
+    @State private var menuBar = MenuBarController()
     @State private var expansion: ExpansionController?
 
     var body: some Scene {
         WindowGroup("Quill", id: "library") {
             WorkspaceView(store: store, preferences: preferences, updates: updates, expansion: expansion)
+                .background(MenuBarLifecycleView(controller: menuBar, store: store, preferences: preferences, expansion: expansion))
                 .onAppear { delegate.store = store; delegate.preferences = preferences; preferences.applyActivationPolicy() }
                 .task { await store.load(); if expansion == nil { expansion = ExpansionController(store: store) } }
         }
         .defaultSize(width: 1120, height: 740)
         .commands { LibraryCommands(store: store) }
-        MenuBarExtra("Quill", systemImage: "text.quote", isInserted: $preferences.showMenuBar) {
-            MenuBarView(store: store, expansion: expansion)
-        }
-    }
-}
 
-private struct MenuBarView: View {
-    let store: LibraryStore
-    let expansion: ExpansionController?
-    @Environment(\.openWindow) private var openWindow
-    var body: some View {
-        Button("Open Quill Library") {
-            store.destination = .snippets
-            showQuillWorkspace(openWindow: openWindow)
-        }
-        Button("Settings…") {
-            store.destination = .settings
-            showQuillWorkspace(openWindow: openWindow)
-        }
-        Divider()
-        if let expansion {
-            Button(expansion.isEnabled ? "Pause Expansion" : "Enable Expansion") {
-                if expansion.isEnabled { expansion.pause() } else { expansion.enable() }
-            }
-        }
-        Divider()
-        Button("Quit Quill") { NSApp.terminate(nil) }.keyboardShortcut("q")
     }
 }
 

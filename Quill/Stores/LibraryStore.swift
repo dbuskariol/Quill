@@ -13,6 +13,7 @@ final class LibraryStore {
     var pendingDelete: Snippet?
     var drafts: [UUID: Snippet] = [:] { didSet { scheduleCheckpoint() } }
     var showQuickActions = false
+    var requestedSettingsPage: SettingsPage?
     enum Destination { case snippets, macros, settings }
     var destination: Destination = .snippets
     var showTextExpanderImport = false

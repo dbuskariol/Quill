@@ -5,6 +5,7 @@ import Foundation
 struct MarkdownDocument: Sendable {
     struct Run: Sendable {
         let text: String
+        let sourceRange: NSRange?
         let path: [PresentationIntent.IntentType]
         let bold: Bool
         let italic: Bool
@@ -12,12 +13,15 @@ struct MarkdownDocument: Sendable {
         let strike: Bool
         let link: URL?
     }
+    private let source: String
     let runs: [Run]
     let warnings: [String]
     init(_ source: String) throws {
         guard source.utf16.count <= 1_000_000 else { throw TemplateError.invalid("Formatted content exceeds the safety limit.") }
         // Tokens must survive Markdown underscores, pipes, quotes and filters unchanged.
+        self.source = source
         var masked = source
+        var sourceOffsets = Array(0...source.utf16.count)
         var literals: [String: (text: String, code: String)] = [:]
         let prefix = "QuillLiteral" + UUID().uuidString.replacingOccurrences(of: "-", with: "")
         let regex = try NSRegularExpression(pattern: #"\{\{[^{}]*\}\}|(?<!\\)<[^>\n]+>"#)
@@ -27,7 +31,8 @@ struct MarkdownDocument: Sendable {
             let value = String(masked[range])
             // Let safe Markdown autolinks use Foundation's native link parsing.
             if value.hasPrefix("<"), let url = URL(string: String(value.dropFirst().dropLast())), Self.safeLink(url) { continue }
-            literals[marker] = (value, value); masked.replaceSubrange(range, with: marker)
+            literals[marker] = (value, value)
+            Self.replaceLiteral(range, in: &masked, with: marker, sourceOffsets: &sourceOffsets)
         }
         // Foundation's URL detector retains backslash escapes inside bare URLs.
         // Mask those literals before parsing, but preserve source bytes inside code.
@@ -39,9 +44,10 @@ struct MarkdownDocument: Sendable {
             guard original.contains("\\") else { continue }
             let marker = prefix + "url\(index)z"
             let decoded = punctuation.stringByReplacingMatches(in: original, range: NSRange(original.startIndex..., in: original), withTemplate: "$1")
-            literals[marker] = (decoded, original); masked.replaceSubrange(range, with: marker)
+            literals[marker] = (decoded, original)
+            Self.replaceLiteral(range, in: &masked, with: marker, sourceOffsets: &sourceOffsets)
         }
-        let parsed = try AttributedString(markdown: masked, options: .init(interpretedSyntax: .full))
+        let parsed = try AttributedString(markdown: masked, options: .init(interpretedSyntax: .full, appliesSourcePositionAttributes: true))
         var result: [Run] = [], issues: Set<String> = []
         for run in parsed.runs {
             var text = String(parsed.characters[run.range])
@@ -61,10 +67,77 @@ struct MarkdownDocument: Sendable {
             if path.contains(where: { switch $0.kind { case .table, .tableCell, .tableHeaderRow, .tableRow: true; default: false } }) {
                 issues.insert("Tables have limited native preview support. Check the copied result in Zendesk.")
             }
-            result.append(Run(text: text, path: path, bold: intent.contains(.stronglyEmphasized), italic: intent.contains(.emphasized), code: intent.contains(.code), strike: intent.contains(.strikethrough), link: link))
+            let sourceRange = run.markdownSourcePosition.flatMap { position -> NSRange? in
+                guard let range = Range(position, in: masked) else { return nil }
+                let maskedRange = NSRange(range, in: masked)
+                let start = sourceOffsets[maskedRange.location]
+                let end = sourceOffsets[NSMaxRange(maskedRange)]
+                return NSRange(location: start, length: end - start)
+            }
+            result.append(Run(text: text, sourceRange: sourceRange, path: path, bold: intent.contains(.stronglyEmphasized), italic: intent.contains(.emphasized), code: intent.contains(.code), strike: intent.contains(.strikethrough), link: link))
         }
         runs = result; warnings = issues.sorted()
     }
+    private static func replaceLiteral(_ range: Range<String.Index>, in text: inout String, with marker: String, sourceOffsets: inout [Int]) {
+        let span = NSRange(range, in: text)
+        let start = sourceOffsets[span.location], end = sourceOffsets[NSMaxRange(span)]
+        // Marker boundaries retain their original source span; parsing never sees template syntax.
+        let boundaries = Array(repeating: start, count: marker.utf16.count) + [end]
+        sourceOffsets.replaceSubrange(span.location...NSMaxRange(span), with: boundaries)
+        text.replaceSubrange(range, with: marker)
+    }
+
+    /// Projects a template cursor into exactly the same visible text used by native copying.
+    func plainTextCursorOffset(for sourceOffset: Int) throws -> Int {
+        guard sourceOffset >= 0, sourceOffset <= source.utf16.count,
+              Range(NSRange(location: sourceOffset, length: 0), in: source) != nil else {
+            throw TemplateError.invalid("The cursor is outside the template text.")
+        }
+        var outputOffset = 0, previousSourceEnd = 0
+        for segment in segments {
+            let prefixLength = segment.text.utf16.count - segment.run.text.utf16.count
+            if let span = segment.run.sourceRange {
+                if sourceOffset < span.location {
+                    let gap = NSRange(location: previousSourceEnd, length: max(0, span.location - previousSourceEnd))
+                    let raw = (source as NSString).substring(with: gap)
+                    let prefix = (segment.text as NSString).substring(to: prefixLength)
+                    return outputOffset + Self.visibleOffset(max(0, sourceOffset - previousSourceEnd), from: raw, to: prefix)
+                }
+                if sourceOffset <= NSMaxRange(span) {
+                    let raw = (source as NSString).substring(with: span)
+                    return outputOffset + prefixLength + Self.visibleOffset(sourceOffset - span.location, from: raw, to: segment.run.text)
+                }
+                previousSourceEnd = max(previousSourceEnd, NSMaxRange(span))
+            }
+            outputOffset += segment.text.utf16.count
+        }
+        return outputOffset
+    }
+
+    private static func visibleOffset(_ offset: Int, from source: String, to visible: String) -> Int {
+        if source == visible { return offset }
+        // Source positions narrow this alignment to one semantic run. Removed Markdown syntax,
+        // decoded entities and code indentation can change its length without changing the cursor's meaning.
+        let units = Array(source.utf16)
+        let difference = Array(visible.utf16).difference(from: units)
+        let removed = Set(difference.removals.compactMap { change -> Int? in
+            if case let .remove(index, _, _) = change { return index }
+            return nil
+        })
+        let retained = units.indices.filter { !removed.contains($0) }
+        var position = retained.prefix { $0 < offset }.count
+        for (insertedCount, change) in difference.insertions.enumerated() {
+            if case let .insert(index, _, _) = change {
+                let retainedIndex = index - insertedCount
+                let sourceAnchor = retainedIndex == 0 ? 0 : retained[retainedIndex - 1] + 1
+                // A cursor before a decoded entity or substituted bullet stays before it;
+                // a cursor after its removed source syntax advances past the visible replacement.
+                if offset > sourceAnchor { position += 1 }
+            }
+        }
+        return min(visible.utf16.count, max(0, position))
+    }
+
     static func safeLink(_ url: URL) -> Bool { ["https", "http", "mailto"].contains(url.scheme?.lowercased() ?? "") }
     static func escapeHTML(_ value: String) -> String {
         value.replacingOccurrences(of: "&", with: "&amp;").replacingOccurrences(of: "<", with: "&lt;").replacingOccurrences(of: ">", with: "&gt;").replacingOccurrences(of: "\"", with: "&quot;").replacingOccurrences(of: "'", with: "&#39;")

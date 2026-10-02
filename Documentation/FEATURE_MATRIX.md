@@ -4,27 +4,27 @@ Research checked 2 October 2026 against official TextExpander sources. Status de
 
 | Capability | Status | Acceptance criteria / boundary |
 | --- | --- | --- |
-| Global abbreviation expansion | Partial, runtime acceptance pending | Consent buttons, session enable/pause, allowed-app policy, committed AX text matching and verified AX replacement implemented. No permissions granted in QA; fill-in insertion, adapter coverage and IME support remain open |
+| Global abbreviation expansion | Partial, runtime acceptance pending | Consent setup, immediate/delimiter matching, typed expansion forms, application scope and verified AX replacement implemented. Signed installed grants and rebuild continuity confirmed; physical typing, external form transactions, editor coverage and IME acceptance remain open |
 | Plain text library/editor | Implemented | Create/edit/save/delete with confirmation; restart round-trip and error preservation |
 | Markdown and formatted copy | Implemented locally | Explicit formats, native Markdown source/preview, HTML/RTF/plain clipboard output, token preservation and mixed-format references; live Zendesk paste acceptance pending |
 | Full WYSIWYG and images | Planned | Structured rich editing, attachments and lossless rich target round trips |
 | Groups, tags, favorites, search | Partial | Group create/rename/delete with snippet reassignment and recovery, tag editing/search, favorites implemented; tag browser and user sorting planned |
 | Quick actions and command palette | Partial | Cmd-K saved-snippet search, typed form preview/copy and library navigation; global shortcut and external form insertion planned |
-| Single-line fill-ins | Partial | Named plain preview fields and literal resolution implemented; expansion form validation and schema planned |
-| Multiline, popup, optional fill-ins | Partial | Typed inline schemas, native preview controls and choice validation; reusable schema/defaults and external expansion forms planned |
-| Conditional branches | Partial | Nested if/else/end blocks resolve only selected text, fields and references. Images and external expansion forms planned |
-| Date picker fill-in | Implemented in preview | Native date chooser, explicit confirmation of today, strict date validation and custom format tests |
+| Single-line fill-ins | Partial | Named literal fields, required validation and shared native expansion forms implemented; external transaction acceptance pending |
+| Multiline, popup, optional fill-ins | Partial | Typed inline schemas, shared native preview/expansion controls and choice validation; external transaction acceptance and reusable schemas/defaults pending |
+| Conditional branches | Partial | Nested if/else/end blocks resolve only selected text, fields and references. Native expansion forms implemented; external transaction acceptance pending; images planned |
+| Date picker fill-in | Implemented in preview | Shared native date chooser in preview and expansion form, explicit confirmation of today, strict date validation and format tests |
 | Date/time macros | Partial | ISO date/time, custom ICU date formats and Gregorian day offsets implemented; broader calendar/unit math planned |
 | General math | Implemented | Bounded numeric parser for +, -, *, / and parentheses; finite values, divide-by-zero and depth checks; no code evaluation |
 | Clipboard | Planned | Explicit snapshot consent; preview exactly what is used; safe ownership-aware restoration |
-| Cursor position | Partial | UTF-16 preview and AX cursor placement implemented; actual target acceptance and movement actions pending |
+| Cursor position | Partial | Shared visible-text cursor projection for plain text/Markdown preview and AX insertion, with native source-position mapping and boundary regression cases; actual target acceptance and movement actions pending |
 | Key macros and timed delays | Planned | Typed bounded actions, preview, app readiness/focus checks and cancellation |
-| Nested snippets | Implemented (preview) | Missing/ambiguous references and cycles fail; depth/output bounded; no global insertion |
+| Nested snippets | Implemented (preview) | Missing/ambiguous references and cycles fail; depth/output bounded; expansion uses the same resolver, external acceptance pending |
 | Inline template completion | Implemented | Shared native text-system helper in snippet and custom-macro editors, partial words, snippet/macro dot discovery aliases, common Zendesk paths, UTF-16 ranges and bounded suggestions; custom account schemas are entered manually |
 | Custom reusable macros | Implemented | Searchable workspace editor, insertion at selection/cursor, shared fields, nested blocks, cycle checks, atomic reference updates on rename, draft recovery, native history and current-schema interchange |
 | Zendesk message placeholders | Implemented locally | Dedicated common/custom-field picker, supported namespace/filter preservation, unchanged escapes and clear preview; Zendesk performs substitution. No live-ticket submission claimed |
 | Abbreviation conflict detection | Partial | Exact matches warn and ambiguous nesting fails; case/scope/boundary/prefix diagnostics planned |
-| Delimiters, case, boundaries, aliases | Partial | Persisted delimiter/case/boundary policy and collision refusal tested; aliases and per-snippet overrides planned |
+| Delimiters, case, boundaries, aliases | Partial | Immediate/delimiter, case/boundary policy, prefix disambiguation and collision refusal tested; aliases and per-snippet overrides planned |
 | App scope and profiles | Partial | All Applications or Selected Applications with named app rows, a native app chooser, editable exclusions and exclusion precedence. Per-app rule overrides and group scopes planned |
 | Scripts | Planned | Explicit per-script trust bound to content hash, no trust on import, bounded execution and result preview |
 | TextExpander import/export | Partial | Dedicated multi-file CSV/legacy-group import, original/converted preview, warnings, conflict handling, backup and undo. Common macros convert; unsupported items excluded. TextExpander export and broader formats planned; see migration guide |
@@ -41,12 +41,14 @@ Research checked 2 October 2026 against official TextExpander sources. Status de
 | Shared/team libraries and roles | Deferred | Separate collaboration milestone: membership, role checks, key rotation, conflict review and audited writes |
 | Organization administration | Deferred | Separate service milestone: provisioning, policies, requests, roles and administrator workflows |
 | Cross-platform clients | Deferred | Independent Windows/browser/mobile milestones and compatibility matrix |
-| Native Settings/menu bar/commands | Partial | Native sidebar Settings, persisted Dock/menu/window controls, login service status, storage/recovery, expansion consent/policy, updater status and Cmd-K implemented. Login requires installed-bundle acceptance; opt-in Statistics settings implemented; global-shortcut settings planned |
-| Distribution and update system | Partial, externally blocked | Pinned Sparkle 2.10, signed-feed/archive policy, native updater preferences and guarded local packaging script. Feed/key/Developer ID/notarization inputs absent; upgrade/failure acceptance pending |
+| Native Settings/menu bar/commands | Partial | Native sidebar Settings, persisted Dock/menu/window controls, login service status, storage/recovery, expansion consent/policy, updater status and Cmd-K implemented. Installed login registration/unregistration verified; opt-in Statistics settings implemented; global-shortcut settings planned |
+| Distribution and update system | Implemented distribution pipeline | Published 0.1.1 uses Developer ID signing, notarization/stapling and an app-specific signed Sparkle feed. New repair release, updater installation and failure acceptance pending |
+| Expansion duration and background use | Implemented, acceptance partial | Until Quill Quits, 15 Minutes, 1 Hour and explicitly armed Across Launches; pause disarms launch resumption. Signed relaunch resumption and deadline display verified. Native menu actions, timer expiry and physical external typing still pending |
+| Menu bar, Dock and window closing | Implemented, acceptance partial | Native menu bar library/Quick Actions/Settings/enable/pause/duration/quit controls; Dock hiding, reachability guard and keep-running close behavior. Background process and library reopen verified; menu click-through pending |
 
 ## Official sources and current additions
 
-- [Advanced snippet elements](https://textexpander.com/learn/using/snippets/advanced-snippet-elements) establishes macros, dynamic content and form elements. Quill implements only the plain preview subset above.
+- [Advanced snippet elements](https://textexpander.com/learn/using/snippets/advanced-snippet-elements) establishes macros, dynamic content and form elements. Quill’s implemented subset and external acceptance boundaries are listed above.
 - [What is TextExpander](https://textexpander.com/what-is-textexpander) describes reusable content and team use; [Press kit](https://textexpander.com/presskit) provides broad product/platform scope. Cross-platform and organization work are separate Quill milestones.
 - [What's new](https://textexpander.com/whats-new) documents recent conditional sections, repeat-last expansion, date picker, delay macros, mobile and team workflows. All are explicitly tracked above. Review again before any parity marketing or migration release.
 
