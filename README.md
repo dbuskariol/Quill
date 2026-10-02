@@ -22,6 +22,22 @@ Quill requires macOS 26 or later.
 
 For automatic expansion, open **Settings → Expansion**, choose applications, grant Accessibility and Input Monitoring, then enable expansion. If Quill is missing from Input Monitoring, use its + button and choose `/Applications/Quill.app`. The release includes a signed updater ZIP, checksums, and a provenance manifest.
 
+## First launch
+
+Quill’s short setup flow guides you through Accessibility and Input Monitoring, application scope, and whether expansion resumes when Quill opens. Permission requests happen only when you choose their setup buttons. You can select **Set Up Later** and keep using the library and copying; reopen setup from **Settings → General → Set Up Quill…** or Quick Actions.
+
+Choose **Every Time Quill Opens** in Expansion settings and enable expansion once to keep it enabled after relaunch. Pause stops expansion until you explicitly enable it again. Launch at login is a separate optional choice.
+
+![Quill’s concise native permission setup](Documentation/Screenshots/onboarding.png)
+
+## Quick Actions
+
+Press **⌘K** to search snippets, custom macros and app actions. Matches rank titles and abbreviations ahead of content, with recent items first when the search is empty. Filter by type, group, tag or favorites, or type `tag:email`, `group:"Customer Care"`, `type:macro` and `is:favorite`. Multiple search terms combine.
+
+Use **↑/↓** to select, **Return** to run an action or copy, **⌘Return** to open a template in the library, and **Escape** to dismiss. Required fill-ins receive focus before copying. Markdown templates retain formatted, plain-text and Markdown copy options. Search runs off the main thread; recent history stores up to eight item identifiers, not replies or fill-in values.
+
+![Quill’s native command palette with filters and a template preview](Documentation/Screenshots/quick-actions.png)
+
 ## A useful snippet library
 
 Organize snippets into groups, mark favorites, and search titles, abbreviations, tags, and template content. The source-list sidebar keeps Snippets, Custom Macros, and Settings together; Settings opens inside the workspace from the bottom-left button or Command-comma.
@@ -36,7 +52,6 @@ Select a snippet, edit its source, preview the resolved reply, then save or copy
 
 See the [workspace and UX map](Documentation/UX_MAP.md) for feature placement and editing flows.
 
-![Quick Actions showing a searchable snippet library and a reply filled in with a sample name](Documentation/Screenshots/quick-actions.png)
 
 ## Compose replies from reusable blocks
 
@@ -82,7 +97,7 @@ See [content, storage, and history](Documentation/CONTENT_AND_HISTORY.md) for re
 
 Quill uses SwiftUI split views, system toolbars, menus, SF Symbols, native panels, and a narrow AppKit text editor. Settings manages storage, history, appearance, menu/Dock behavior, launch at login, and expansion policy within the existing workspace.
 
-Expansion defaults to **Until Quill Quits** and requires explicit permission setup and Enable. Choose **15 Minutes**, **1 Hour**, or **Across Launches** to control its duration. Across Launches resumes only after you explicitly enable it; Pause disarms automatic resumption. Closing the library can leave Quill running in the menu bar, and its Dock icon can be hidden while menu bar access remains available. Quit Quill always ends the running session.
+Expansion defaults to **Until Quill Quits** and requires explicit permission setup and Enable. Choose **15 Minutes**, **1 Hour**, or **Every Time Quill Opens** to control its duration. Every Time Quill Opens resumes only after you explicitly enable it; Pause disarms automatic resumption. Closing the library can leave Quill running in the menu bar, and its Dock icon can be hidden while menu bar access remains available. Quit Quill always ends the running session.
 
 Abbreviations can expand immediately or after Space, Tab or Return. Templates with fill-ins open a compact native panel beside the insertion point, with keyboard focus ready for input. Return expands a completed single-line form; Command-Return submits multiline input; Escape cancels. Choose All Applications or Selected Applications, then manage selections and exclusions through the native app chooser and +/− controls. Writable Accessibility text selections are required; secure input and password fields remain protected. Permission-enabled external target acceptance is tracked in [expansion acceptance](Documentation/EXPANSION_ACCEPTANCE.md).
 
@@ -120,7 +135,7 @@ Run the CI-equivalent gate with:
 ./script/verify-ci.sh
 ```
 
-The gate validates scripts, metadata, whitespace, a nonzero Swift Testing result, and an unsigned universal Release build. GitHub Actions runs it on macOS 26 Apple silicon and Intel. The latest local verification passed 88 tests across 13 suites and the universal Release build. See [verification evidence](Documentation/VERIFICATION.md) for observations and remaining acceptance.
+The gate validates scripts, metadata, whitespace, a nonzero Swift Testing result, and an unsigned universal Release build. GitHub Actions runs it on macOS 26 Apple silicon and Intel. The latest local verification passed 94 tests across 14 suites and the universal Release build. See [verification evidence](Documentation/VERIFICATION.md) for observations and remaining acceptance.
 
 Repository maintainers use `./script/setup-repository.sh` to configure the required local author/committer identity and hooks. `./script/gh-quill.sh` pins GitHub operations to `dbuskariol` without changing the globally active account.
 

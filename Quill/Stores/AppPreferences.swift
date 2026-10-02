@@ -8,10 +8,12 @@ import ServiceManagement
     var quitWhenLastWindowCloses: Bool { didSet { defaults.set(quitWhenLastWindowCloses, forKey: "quitWhenLastWindowCloses") } }
     private(set) var loginStatus: SMAppService.Status = .notRegistered
     var loginError: String?
+    var setupDisposition: SetupDisposition { didSet { defaults.set(setupDisposition.rawValue, forKey: "setupDisposition") } }
     private let defaults: UserDefaults
 
     init(defaults: UserDefaults = .standard) {
         self.defaults = defaults
+        setupDisposition = defaults.string(forKey: "setupDisposition").flatMap(SetupDisposition.init(rawValue:)) ?? .notStarted
         showMenuBar = defaults.object(forKey: "showMenuBar") as? Bool ?? true
         showDock = defaults.object(forKey: "showDock") as? Bool ?? true
         quitWhenLastWindowCloses = defaults.bool(forKey: "quitWhenLastWindowCloses")
@@ -31,4 +33,10 @@ import ServiceManagement
         } catch { loginError = error.localizedDescription }
         refreshLoginStatus()
     }
+}
+
+
+enum SetupDisposition: String {
+    case notStarted, deferred, completed
+    var shouldPresentAutomatically: Bool { self == .notStarted }
 }

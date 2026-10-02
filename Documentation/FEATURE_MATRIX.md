@@ -4,6 +4,8 @@ Research checked 2 October 2026 against official TextExpander sources. Status de
 
 | Capability | Status | Acceptance criteria / boundary |
 | --- | --- | --- |
+| First-launch setup | Implemented | Shared permission actions, native application scope chooser, explicit Enable, optional resume/login and deferral; completed setup remains dismissed after relaunch |
+| Command palette | Implemented | Native ⌘K search across snippets/macros/actions, ranked and compact fuzzy matching, group/tag/favorite filters, recents, previews and keyboard copy/open/run |
 | Global abbreviation expansion | Partial, runtime acceptance pending | Consent setup, immediate/delimiter matching, typed expansion forms, application scope and verified AX replacement implemented. Signed installed grants and rebuild continuity confirmed; physical typing, external form transactions, editor coverage and IME acceptance remain open |
 | Plain text library/editor | Implemented | Create/edit/save/delete with confirmation; restart round-trip and error preservation |
 | Markdown and formatted copy | Implemented locally | Explicit formats, native Markdown source/preview, HTML/RTF/plain clipboard output, token preservation and mixed-format references; live Zendesk paste acceptance pending |
@@ -43,7 +45,7 @@ Research checked 2 October 2026 against official TextExpander sources. Status de
 | Cross-platform clients | Deferred | Independent Windows/browser/mobile milestones and compatibility matrix |
 | Native Settings/menu bar/commands | Partial | Native sidebar Settings, persisted Dock/menu/window controls, login service status, storage/recovery, expansion consent/policy, updater status and Cmd-K implemented. Installed login registration/unregistration verified; opt-in Statistics settings implemented; global-shortcut settings planned |
 | Distribution and update system | Implemented distribution pipeline | Published 0.1.3 uses Developer ID signing, notarization/stapling and an app-specific signed Sparkle feed. All six public assets, provenance and Sparkle signatures verified after download; actual updater installation and failure acceptance remain pending |
-| Expansion duration and background use | Implemented, acceptance partial | Until Quill Quits, 15 Minutes, 1 Hour and explicitly armed Across Launches; pause disarms launch resumption. Signed relaunch resumption and deadline display verified. Actual 15-minute expiry while the window is closed is verified; native menu dismissal confirmed by the user; candidate accepted by the user for publication. Directed external form/Undo/composition checks remain incomplete |
+| Expansion duration and background use | Implemented, acceptance partial | Until Quill Quits, 15 Minutes, 1 Hour and explicitly armed Every Time Quill Opens; pause disarms launch resumption. Signed relaunch resumption and deadline display verified. Actual 15-minute expiry while the window is closed is verified; native menu dismissal confirmed by the user; candidate accepted by the user for publication. Directed external form/Undo/composition checks remain incomplete |
 | Menu bar, Dock and window closing | Implemented, acceptance partial | Native menu bar library/Quick Actions/Settings/enable/pause/duration/quit controls; Dock hiding, reachability guard and keep-running close behavior. Background process and library reopen verified; native menu dismissal confirmed by the user |
 
 ## Official sources and current additions

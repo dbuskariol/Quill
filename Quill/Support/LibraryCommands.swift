@@ -23,7 +23,7 @@ struct LibraryCommands: Commands {
                 showQuillWorkspace(openWindow: openWindow)
                 store.showTextExpanderImport = true
             }.disabled(!store.isLoaded || store.isBusy || store.hasUnsavedChanges)
-            Button("Quick Actions…") { store.showQuickActions = true }.keyboardShortcut("k").disabled(!store.isLoaded || store.isBusy)
+            Button("Quick Actions…") { showQuillWorkspace(openWindow: openWindow); store.showQuickActions.toggle() }.keyboardShortcut("k").disabled(!store.isLoaded || store.isBusy)
             Button("Repeat Last Copy") { store.quickActions.repeatLastCopy() }.disabled(store.quickActions.lastCopiedText == nil)
             Button("Clear Last Copy") { store.quickActions.clear() }.disabled(store.quickActions.lastCopiedText == nil)
             Button("Template History…") { store.historyRequest = HistoryRequest(itemID: (store.destination == .macros) ? store.selectedMacroID : store.selectedID) }

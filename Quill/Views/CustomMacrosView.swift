@@ -20,7 +20,7 @@ struct CustomMacrosView: View {
             var library = store.library
             library.macros.removeAll { $0.id == draft.id }; library.macros.append(draft)
             try library.validate()
-            return try TemplateRenderer.render(Snippet(groupID: library.groups.first?.id ?? UUID(), title: draft.name, abbreviation: "", body: "{{macro:\(draft.name)}}", format: draft.format), library: library, context: RenderContext(fields: fields))
+            return try TemplateRenderer.render(draft, library: library, context: RenderContext(fields: fields))
         }
     }
     var body: some View {

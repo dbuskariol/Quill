@@ -1,13 +1,14 @@
-# Quill 0.1.3
+# Quill 0.1.4
 
-Fill in templates beside the text you are writing, without bringing the Quill library forward.
+A short first-launch setup and a richer native ⌘K palette help you configure Quill and find the right reply quickly.
 
-- A compact native nonactivating panel appears near the editor's insertion point, with the first field focused.
-- Press Return to expand a completed single-line form, Command-Return from multiline input, or Escape to cancel. Clicking away cancels without replacing the abbreviation.
-- Fields use the same single-line, multiline, choice, optional and date controls as the template editor. The panel keeps longer forms scrollable and stays inside the target display.
-- Returning keyboard focus uses target validation rather than activating Quill and waiting a fixed delay. Changed editor content, secure input and a different active application prevent insertion.
-- Meeting notes retains its resolved date and topic and places the cursor in the notes body.
+- Setup guides you through permissions, where expansion runs, and whether it resumes after relaunch. Set Up Later keeps library editing and copying available; setup can be reopened from Settings or Quick Actions.
+- “Every Time Quill Opens” makes the existing persistent expansion option clearer. Enable once to arm it; Pause keeps it stopped until you explicitly enable it again. Launch at login remains optional.
+- Search snippets, custom macros and app actions with ranked title/abbreviation/content matching, compact fuzzy matches and recent items. Filter by type, group, tag or favorites, including typed filters such as `tag:email` and `group:"Customer Care"`.
+- Arrow keys select, Return copies or runs, Command-Return opens in the library, and Escape dismisses. Required fill-ins receive focus before copy. Markdown copy formats remain available.
+- Search runs off the main thread and rejects stale results. Recents keep identifiers only; reply content and fill-in values are not recorded.
+- Macro previews share one renderer entry point that preserves real recursion checks.
 
 ## Install or update
 
-Requires macOS 26 or later. The universal app supports Apple silicon and Intel. Install Quill in Applications or use Check for Updates. Existing Accessibility and Input Monitoring grants use the same signed bundle identity.
+Requires macOS 26 or later. The signed and notarized universal app supports Apple silicon and Intel. Install in Applications or use Check for Updates. Existing macOS grants retain the same signed identity.
