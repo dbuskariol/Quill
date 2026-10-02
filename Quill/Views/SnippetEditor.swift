@@ -25,7 +25,7 @@ struct SnippetEditor: View {
         Result { try TemplateRenderer.render(draft, library: previewLibrary, context: RenderContext(fields: fields)) }
     }
     private var conflicts: [Snippet] { TemplateRenderer.conflicts(for: draft, in: store.library) }
-    private var changed: Bool { draft != store.selected }
+    private var changed: Bool { !store.library.snippets.contains(draft) }
 
     var body: some View {
         ScrollView {
@@ -43,6 +43,10 @@ struct SnippetEditor: View {
                     GridRow {
                         Text("Group")
                         Picker("Group", selection: $draft.groupID) { ForEach(store.library.groups) { Text($0.name).tag($0.id) } }.labelsHidden()
+                    }
+                    GridRow {
+                        Text("Format")
+                        Picker("Content format", selection: $draft.format) { ForEach(ContentFormat.allCases) { Text($0.label).tag($0) } }.labelsHidden()
                     }
                     GridRow {
                         Text("Tags")
@@ -70,11 +74,12 @@ struct SnippetEditor: View {
             VStack(spacing: 0) {
                 Divider()
                 HStack {
+                    Button("History", systemImage: "clock.arrow.circlepath") { store.historyRequest = HistoryRequest(itemID: original.id) }
                     if changed || saved {
                         Text(changed ? "Unsaved changes" : "Saved").font(.caption).foregroundStyle(.secondary)
                     }
                     Spacer()
-                    Button("Revert") { if let current = store.selected { draft = current } }.disabled(!changed)
+                    Button("Revert") { store.drafts[original.id] = nil; if let current = store.library.snippets.first(where: { $0.id == original.id }) { draft = current } else { store.selectedID = store.library.snippets.first?.id } }.disabled(!changed)
                     Button("Save Snippet") {
                         Task { if await store.save(draft) { saved = true } }
                     }.keyboardShortcut("s").buttonStyle(.borderedProminent)
@@ -86,9 +91,9 @@ struct SnippetEditor: View {
         .navigationTitle(draft.title)
         .disabled(store.isBusy)
         .sheet(isPresented: $showZendesk) { ZendeskPlaceholderPicker { insertMacro($0) } }
-        .onChange(of: draft) { _, value in store.drafts[value.id] = value == store.selected ? nil : value }
-        .onChange(of: original.isFavorite) { _, value in draft.isFavorite = value }
-        .onChange(of: original.body) { _, value in if store.drafts[original.id] == nil { draft.body = value } }
+        .onChange(of: draft) { _, value in store.drafts[value.id] = store.library.snippets.contains(value) ? nil : value }
+        .onChange(of: original) { _, value in if store.drafts[original.id] == nil { draft = value } }
+        .onChange(of: store.drafts[original.id]) { _, value in if let value, value != draft { draft = value } }
     }
     private func insertMacro(_ token: String) { templateEditor.insert(token) }
 }

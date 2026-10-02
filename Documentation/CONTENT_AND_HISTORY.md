@@ -1,40 +1,42 @@
 # Content formats and revision history
 
-Design assessment, 2 October 2026. This is a recommendation; structured rich content and per-item history are not implemented by the current completion milestone.
+Implementation and design boundaries, 2 October 2026.
 
-## What ships in this development build
+## Current storage and history
 
-`CustomMacro` has a stable UUID, name and a plain-text `body`. It is stored in the `macros` array of the same JSON library as groups and snippets. The default file is `~/Library/Application Support/Quill/library.json`; Settings → Library shows the actual location and can relocate it. Library schema version 2 adds macros; that version number is a compatibility marker, not a content revision counter.
+Snippets and reusable macros have stable UUIDs, metadata, canonical `body` source and explicit `plainText` or `markdown` format. The default store is `~/Library/Application Support/Quill/library.sqlite`; Settings → Library shows the actual location. SQLite database schema v1 is separate from current JSON interchange schema v3. Every definition requires its format and metadata; the macros collection is required. Older/incomplete Quill exports are rejected with an actionable error. There are no runtime legacy decoders, inferred-field defaults, automatic JSON storage migration or alternate storage paths. JSON is explicit interchange only.
 
-Saved changes validate, archive the previous complete JSON library under the adjacent `Quill History` directory, then atomically replace the active file. There is a cooperating-writer lock, stale-file detection, backup/restore and one-step whole-library undo. History is whole-library snapshots, with no per-macro diff or bounded retention policy yet. Drafts live only in memory and quitting asks before discarding them; this is not crash recovery for unsaved edits.
+A meaningful saved change writes the current library and affected immutable item revisions in one `BEGIN IMMEDIATE` transaction, with SQLite full synchronous rollback journaling. Revisions include UUID, parent, shared transaction ID, timestamp, reason, canonical content/metadata/format and SHA-256 digest. No-op saves add no version. Deletion retains a tombstone; restore creates a new version. Group names remain library metadata, while template versions preserve group IDs. Deleted groups recover into a Recovered group. Macro rename and its saved reference changes commit together. Hashes are content identifiers, not encryption or tamper-proof auditing.
 
-Markdown characters and Zendesk placeholders can be stored and copied verbatim today. Preview does not render Markdown, and Quill does not produce rich HTML/RTF clipboard content. Zendesk substitutions are preserved for Zendesk; Quill does not resolve them locally or connect to a ticket account.
+History beside each snippet/macro opens a native revision list with metadata/body comparison, saved-source view, Keep Version and Restore. Deleted Templates is available from Library commands and Settings → Library. Retention keeps the newest 100 versions per item by default; 30/100/500 are selectable. Kept versions are additional and exempt. Lowering retention requires confirmation; tombstones remain eligible as the newest version of deleted items. Revision links can end at pruned parents. No invisible Git repository or Git dependency exists.
+
+Drafts are separate, debounced 400 ms recovery checkpoints. They capture authored definitions and the saved revision on which editing began, never field answers, resolved previews, clipboard content or ticket context. Navigation preserves in-memory drafts. Normal quit flushes checkpoints before exiting; failure offers Keep Editing. A sudden crash can lose edits since the last checkpoint. On relaunch, a Review banner opens native comparison and explicit Recover Draft / Discard Draft; recovery does not publish saved content. Save/Revert and the next checkpoint clear active recovery data. Pending recovery must be reviewed before whole-library replacement or relocation.
+
+## Portable backups
+
+**Export → Library Backup** and **Back Up Now** create `.quillbackup` SQLite snapshots containing current definitions, per-item versions, kept flags, retention preference and recovery drafts. SQLite's backup API supplies a consistent snapshot. Opening a backup shows its contents before confirmation. Healthy restore merges portable item history and records restored current definitions as new versions; existing newer versions remain. Disaster restore preserves damaged bytes and reinstalls a complete backup. Portable JSON export/import contains saved definitions only. Current-schema JSON snapshots restore definitions through review; JSON contains no per-item history. Older Quill formats are deliberately unsupported.
+
+An adjacent `Quill History` directory keeps complete SQLite backups and preserved damaged databases. Imports, relocation and healthy whole-library restore create complete safety backups first. Ordinary saves use transactional per-item history; no parallel automatic JSON archive remains. Complete backups are not automatically pruned. Storage relocation copies and verifies the complete database without overwriting an existing library, and leaves the previous location intact. Older whole-library backup files remain in their original directory. Local revisions are recovery, not an independent backup; export a complete backup to another location for that purpose. Content is local, unencrypted, and never uploaded.
+
+## Native formatting
+
+The same native source editor and token completion edit plain text or Markdown. Foundation parses Markdown into a semantic document; an AppKit read-only attributed-text preview uses native fonts, selection and links without HTML import, WebKit or remote image loading. Formatted Copy writes allowlisted HTML, native RTF and readable plain text in one clipboard item. Copy As offers plain text or Markdown source. Repeat Last Copy retains and replays those formats in process memory until Clear or quit. Required local fields must be filled before copy.
+
+Zendesk expressions, including underscore paths and filters, are masked during Markdown parsing and preserved literally. Literal fill-ins are escaped; mixed-format references convert Markdown to readable plain text or escape plain blocks for Markdown. Raw HTML is displayed literally. Unsafe link schemes stay as text, images become descriptive links, and tables warn about limited native preview support. Native headings, emphasis, links, lists, quotes and code have automated coverage. Actual Zendesk channel/paste acceptance remains untested. Automatic Accessibility expansion accepts plain-text root templates only; it does not insert rich clipboard content.
+
+This is a native Markdown source-editing milestone. A full constrained WYSIWYG editor, attachments, account-specific formatting profiles and lossless arbitrary rich-text round trips remain future work. There are no independently editable HTML/RTF copies that can drift from canonical source.
 
 ## Zendesk's formatting boundary
 
 Zendesk documents a combined CKEditor rich-content toolbar and Markdown input experience in its ticket composer. That combined experience does not apply to its macro editor. Zendesk's rich-content macro comments can also carry an alternate plain-text fallback for channels without rich text.
 
-Pasting Markdown from a plain-text editor into the ticket composer can format it automatically, but code blocks and nested lists have documented paste limitations. Source editor type, paste-as-plain-text, channel and account configuration affect the result. Quill's current plain-text copy is useful for Markdown, but is not a guarantee of formatting parity.
+Pasting Markdown from a plain-text editor into the ticket composer can format it automatically, but code blocks and nested lists have documented paste limitations. Source editor type, paste-as-plain-text, channel and account configuration affect the result. Quill offers Markdown-source and HTML/RTF copying with plain fallback, but neither is a guarantee of Zendesk formatting parity.
 
 For API comment output, Zendesk recommends `html_body` for Agent Workspace. Markdown belongs in `body`, not `html_body`, and Markdown rendering there is restricted to agent-authored comments. Quill has no ticket API integration; these distinctions inform a future output adapter rather than authorizing ticket submission.
 
-## Recommended native content model
+## Future rich document boundary
 
-Use one canonical, versioned template document per item. Introduce explicit formats rather than interpreting every plain string as Markdown: plain text and Markdown first, with a structured rich-document variant when rich editing ships. Keep the existing plain-text format lossless during migration. A native formatted editor should share the same token catalog/completion and renderer, with placeholders represented as semantic inline nodes so formatting cannot split a `{{...}}` expression.
-
-The rich document should represent paragraphs, supported inline marks, lists, links, code blocks, attachments and template tokens in a deterministic schema. Generate plain text, a defined Markdown subset and sanitized Zendesk-compatible HTML from that source. Escape literal fill-in values for the destination format; do not reinterpret them as markup or template tokens. Do not maintain independently editable Markdown, HTML and RTF copies: they will drift. Markdown cannot losslessly represent every rich-text attribute, including colors and some layout; flag lossy exports instead of silently dropping them.
-
-For the initial formatting milestone, native Markdown editing/preview and a tested Zendesk paste profile are smaller than a complete WYSIWYG editor. A later constrained native WYSIWYG editor can edit the structured document; rich clipboard output should include HTML/RTF plus a plain-text fallback. Test token preservation, links, lists, nested lists, code blocks, Unicode, sanitization and channel-specific fallback in real Zendesk before claiming compatibility. Never fetch remote images merely to render a local preview.
-
-## Recommended history model
-
-For this app-managed library, favor transactional per-item revisions over an invisible Git repository. As the library grows, migrate to a native local SQLite-backed store, with explicit schema migrations and portable JSON/document export. Whether implemented directly or through an Apple persistence layer, require atomic current-item + revision + attachment-reference writes and test rollback/crash behavior.
-
-Each meaningful save should create an immutable revision containing item UUID, revision UUID, parent revision, timestamp, content format/schema, metadata and canonical content/hash. Deletions should retain a recoverable tombstone. Restoring an older revision creates a new revision; it never rewrites history. No-op saves create no revision. Revisions store authored templates and metadata; transient fill-in values, resolved previews, clipboard contents and ticket context do not become history. Group edits/imports should also record a transaction ID so related changes can be reviewed together. Hashing can deduplicate identical bodies; it is not encryption or a tamper-proof audit trail.
-
-Draft recovery is a separate, debounced checkpoint, not a visible history entry for every keystroke. Keep the latest recoverable draft and restore it after a crash without publishing it as saved content. Define retention by age/storage budget with protected restore points; deleting current content must include a clear policy for revisions and attachments. Local history is a recovery feature, not a substitute for an export or independent backup.
-
-Expose a small History action beside the selected snippet/macro's Save controls. It opens a native revision list with readable dates, a diff/preview and Restore. Avoid branch/commit/hash vocabulary. Settings → Library remains the home for whole-library disaster recovery, export and storage policy. This keeps authoring history near its content and global maintenance in preferences.
+A later constrained WYSIWYG editor should use a structured document for paragraphs, supported marks, lists, links, code, attachments and semantic template nodes. Source, native preview and destination output must share one renderer and completion catalog. Define loss warnings for attributes Markdown cannot represent, and test real Zendesk composers/channels before claiming fidelity. Do not fetch remote images merely to render a local preview. NSDocument/NSFileVersion may suit user-owned library documents later, but does not replace the current per-item recovery model.
 
 ## Why not hidden Git by default
 
@@ -49,3 +51,6 @@ Keep Git an optional export/integration for people who want it. The recommendati
 - [Zendesk macro comments and plain-text fallback](https://support.zendesk.com/hc/en-us/articles/4408844187034-Creating-macros-for-repetitive-ticket-responses-and-actions): rich macro content and fallback.
 - [Zendesk Ticket Comments API](https://developer.zendesk.com/api-reference/ticketing/tickets/ticket_comments/): body/html_body, sanitization and placeholder handling.
 - [Apple NSFileVersion](https://developer.apple.com/documentation/foundation/nsfileversion) and [NSDocument version preservation](https://developer.apple.com/documentation/appkit/nsdocument/preservesversions): native file/document versions.
+
+- [SQLite atomic commit](https://www.sqlite.org/atomiccommit.html) and [transactions](https://www.sqlite.org/lang_transaction.html): current content and revisions share one database transaction.
+- [Apple Foundation Markdown parsing](https://developer.apple.com/documentation/foundation/instantiating-attributed-strings-with-markdown-syntax): native semantic formatting.

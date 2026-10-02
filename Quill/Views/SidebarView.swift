@@ -4,7 +4,7 @@ struct SidebarView: View {
     @Bindable var store: LibraryStore
     @State private var manageGroups = false
     var body: some View {
-        List(selection: Binding<String?>(get: { store.isShowingSettings ? nil : (store.showCustomMacros ? "macros" : store.filter) }, set: { value in
+        List(selection: Binding<String?>(get: { (store.destination == .settings) ? nil : ((store.destination == .macros) ? "macros" : store.filter) }, set: { value in
             if let value {
                 if value == "macros" { store.destination = .macros }
                 else { store.destination = .snippets; store.filter = value }
@@ -20,12 +20,13 @@ struct SidebarView: View {
                     Label(group.name, systemImage: group.symbol).tag(group.id.uuidString)
                 }
             } header: {
-                HStack {
+                HStack(alignment: .firstTextBaseline, spacing: 8) {
                     Text("Groups")
-                    Spacer()
-                    Button { manageGroups = true } label: { Image(systemName: "folder.badge.gearshape") }
-                        .buttonStyle(.borderless).help("Manage Groups").accessibilityLabel("Manage Groups")
+                    Button { manageGroups = true } label: {
+                        Image(systemName: "folder.badge.gearshape").font(.body)
+                    }.buttonStyle(.borderless).help("Manage Groups").accessibilityLabel("Manage Groups")
                         .disabled(!store.isLoaded || store.isBusy)
+                    Spacer()
                 }
             }
         }
@@ -35,15 +36,15 @@ struct SidebarView: View {
         .safeAreaInset(edge: .bottom) {
             VStack(spacing: 0) {
                 Divider()
-                Button { store.isShowingSettings = true } label: {
+                Button { store.destination = .settings } label: {
                     Label("Settings", systemImage: "gearshape")
                         .frame(maxWidth: .infinity, alignment: .leading)
                         .padding(.horizontal, 10).frame(height: 32)
-                        .foregroundStyle(store.isShowingSettings ? Color(nsColor: .alternateSelectedControlTextColor) : Color.primary)
-                        .background(store.isShowingSettings ? Color.accentColor : .clear, in: RoundedRectangle(cornerRadius: 7))
+                        .foregroundStyle((store.destination == .settings) ? Color(nsColor: .alternateSelectedControlTextColor) : Color.primary)
+                        .background((store.destination == .settings) ? Color.accentColor : .clear, in: RoundedRectangle(cornerRadius: 7))
                         .contentShape(Rectangle())
                 }.buttonStyle(.plain)
-                    .accessibilityAddTraits(store.isShowingSettings ? .isSelected : [])
+                    .accessibilityAddTraits((store.destination == .settings) ? .isSelected : [])
                     .padding(.horizontal, 9).padding(.vertical, 9)
             }.frame(maxWidth: .infinity, alignment: .leading)
         }

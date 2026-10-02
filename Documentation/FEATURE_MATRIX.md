@@ -6,7 +6,8 @@ Research checked 2 October 2026 against official TextExpander sources. Status de
 | --- | --- | --- |
 | Global abbreviation expansion | Partial, runtime acceptance pending | Consent buttons, session enable/pause, allowed-app policy, committed AX text matching and verified AX replacement implemented. No permissions granted in QA; fill-in insertion, adapter coverage and IME support remain open |
 | Plain text library/editor | Implemented | Create/edit/save/delete with confirmation; restart round-trip and error preservation |
-| Rich text, hyperlinks, images | Planned | Preserve formatting/attachments across save, preview and supported target editors |
+| Markdown and formatted copy | Implemented locally | Explicit formats, native Markdown source/preview, HTML/RTF/plain clipboard output, token preservation and mixed-format references; live Zendesk paste acceptance pending |
+| Full WYSIWYG and images | Planned | Structured rich editing, attachments and lossless rich target round trips |
 | Groups, tags, favorites, search | Partial | Group create/rename/delete with snippet reassignment and recovery, tag editing/search, favorites implemented; tag browser and user sorting planned |
 | Quick actions and command palette | Partial | Cmd-K saved-snippet search, typed form preview/copy and library navigation; global shortcut and external form insertion planned |
 | Single-line fill-ins | Partial | Named plain preview fields and literal resolution implemented; expansion form validation and schema planned |
@@ -20,7 +21,7 @@ Research checked 2 October 2026 against official TextExpander sources. Status de
 | Key macros and timed delays | Planned | Typed bounded actions, preview, app readiness/focus checks and cancellation |
 | Nested snippets | Implemented (preview) | Missing/ambiguous references and cycles fail; depth/output bounded; no global insertion |
 | Inline template completion | Implemented | Shared native text-system helper in snippet and custom-macro editors, partial words, snippet/macro dot discovery aliases, common Zendesk paths, UTF-16 ranges and bounded suggestions; custom account schemas are entered manually |
-| Custom reusable macros | Implemented | Searchable workspace editor, insertion at selection/cursor, shared fields, nested blocks, cycle checks, atomic reference updates on rename, draft/quit protection and v2 persistence |
+| Custom reusable macros | Implemented | Searchable workspace editor, insertion at selection/cursor, shared fields, nested blocks, cycle checks, atomic reference updates on rename, draft recovery, native history and current-schema interchange |
 | Zendesk message placeholders | Implemented locally | Dedicated common/custom-field picker, supported namespace/filter preservation, unchanged escapes and clear preview; Zendesk performs substitution. No live-ticket submission claimed |
 | Abbreviation conflict detection | Partial | Exact matches warn and ambiguous nesting fails; case/scope/boundary/prefix diagnostics planned |
 | Delimiters, case, boundaries, aliases | Partial | Persisted delimiter/case/boundary policy and collision refusal tested; aliases and per-snippet overrides planned |
@@ -32,8 +33,9 @@ Research checked 2 October 2026 against official TextExpander sources. Status de
 | Repeat last expansion | Planned | Replay resolved fields/date/clipboard/actions exactly; explicit memory retention/clear controls |
 | Usage and time saved | Implemented, external expansion acceptance pending | Opt-in aggregate expansion/copy counts, characters avoided and explained adjustable estimate; local reset/export; no content/event log |
 | Local persistence/privacy | Implemented | Atomic saves, actor isolation, corruption preserved, surfaced errors, no network or analytics |
-| Dry-run resolved preview | Implemented (plain templates) | Frozen-context tests; literal fields; live text/cursor diagnostics; copy blocked on empty fields |
-| Version history/library undo | Partial | Prior file archived before save, explicit backup/restore, corruption preservation and one-step undo implemented; revision diffs, bounded retention and full undo stack planned |
+| Dry-run resolved preview | Implemented (plain/Markdown templates) | Frozen-context tests; literal fields; live text/cursor diagnostics; copy blocked on empty fields |
+| Version history/library undo | Implemented, full undo stack planned | Transactional item versions, metadata/body comparison, restore-as-new, deletion recovery, protected versions and retention; complete backups/reviewed restore and one-step library undo |
+| Unsaved draft recovery | Implemented | Separate debounced authored checkpoints, flush on normal quit, review/recover/discard on relaunch, original revision conflict detection; no field answers or clipboard history |
 | Reusable template test cases | Planned | User-named context fixtures with text/cursor/action assertions; renderer unit tests exist today |
 | Secure personal sync | Planned | Threat model, device keys/recovery/revocation and offline conflict tests before activation |
 | Shared/team libraries and roles | Deferred | Separate collaboration milestone: membership, role checks, key rotation, conflict review and audited writes |
@@ -50,4 +52,4 @@ Research checked 2 October 2026 against official TextExpander sources. Status de
 
 This review is not an exhaustive release acceptance suite. Advanced feature syntax and per-platform behavior require deeper official-source research and fixtures during implementation.
 
-Detailed external scope and acceptance: [Collaboration roadmap](COLLABORATION_ROADMAP.md). Release inputs and gates: [Release preparation](RELEASE.md). Migration compatibility: [TextExpander import](TEXTEXPANDER_IMPORT.md). Repeat Last Copy in Quick Actions is distinct from replaying a completed external expansion; the latter remains planned. Rich text, scripts, broader TextExpander migration, suggestions and reusable user test cases remain unfinished Mac work. No full parity or release-readiness claim is made.
+Detailed external scope and acceptance: [Collaboration roadmap](COLLABORATION_ROADMAP.md). Release inputs and gates: [Release preparation](RELEASE.md). Migration compatibility: [TextExpander import](TEXTEXPANDER_IMPORT.md). Repeat Last Copy in Quick Actions is distinct from replaying a completed external expansion; the latter remains planned. Full WYSIWYG/attachments, scripts, broader TextExpander migration, suggestions and reusable user test cases remain unfinished Mac work. No full parity or release-readiness claim is made.

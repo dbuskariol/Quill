@@ -6,7 +6,7 @@ struct LibraryRepositoryTests {
     @Test func firstLoadPersistsStableStarterIdentifiers() async throws {
         let directory = FileManager.default.temporaryDirectory.appending(path: UUID().uuidString)
         defer { try? FileManager.default.removeItem(at: directory) }
-        let repository = LibraryRepository(url: directory.appending(path: "library.json"))
+        let repository = LibraryRepository(url: directory.appending(path: "library.sqlite"))
         let first = try await repository.load()
         #expect(try await repository.load() == first)
     }
@@ -14,7 +14,7 @@ struct LibraryRepositoryTests {
     @Test @MainActor func storeCreationFavoriteAndDeletionPersist() async throws {
         let directory = FileManager.default.temporaryDirectory.appending(path: UUID().uuidString)
         defer { try? FileManager.default.removeItem(at: directory) }
-        let repository = LibraryRepository(url: directory.appending(path: "library.json"))
+        let repository = LibraryRepository(url: directory.appending(path: "library.sqlite"))
         let store = LibraryStore(repository: repository)
         await store.load()
         let count = store.library.snippets.count
@@ -32,7 +32,7 @@ struct LibraryRepositoryTests {
     @Test func atomicRoundTripAndReplacement() async throws {
         let directory = FileManager.default.temporaryDirectory.appending(path: UUID().uuidString)
         defer { try? FileManager.default.removeItem(at: directory) }
-        let repository = LibraryRepository(url: directory.appending(path: "library.json"))
+        let repository = LibraryRepository(url: directory.appending(path: "library.sqlite"))
         var library = Library.starter
         try await repository.save(library)
         #expect(try await repository.load() == library)
@@ -42,7 +42,7 @@ struct LibraryRepositoryTests {
     }
 
     @Test func corruptDataIsPreserved() async throws {
-        let url = FileManager.default.temporaryDirectory.appending(path: UUID().uuidString)
+        let url = FileManager.default.temporaryDirectory.appending(path: UUID().uuidString + ".sqlite")
         defer { try? FileManager.default.removeItem(at: url) }
         let data = Data("broken JSON".utf8)
         try data.write(to: url)
@@ -52,7 +52,7 @@ struct LibraryRepositoryTests {
     }
 
     @Test func invalidSaveLeavesExistingDataIntact() async throws {
-        let url = FileManager.default.temporaryDirectory.appending(path: UUID().uuidString)
+        let url = FileManager.default.temporaryDirectory.appending(path: UUID().uuidString + ".sqlite")
         defer { try? FileManager.default.removeItem(at: url) }
         let repository = LibraryRepository(url: url)
         let library = Library.starter
@@ -67,14 +67,14 @@ struct LibraryRepositoryTests {
         let directory = FileManager.default.temporaryDirectory.appending(path: UUID().uuidString)
         defer { try? FileManager.default.removeItem(at: directory) }
         try Data("file blocks directory creation".utf8).write(to: directory)
-        let repository = LibraryRepository(url: directory.appending(path: "library.json"))
+        let repository = LibraryRepository(url: directory.appending(path: "library.sqlite"))
         await #expect(throws: (any Error).self) { try await repository.save(.starter) }
     }
 
     @Test @MainActor func storeDoesNotPublishFailedSave() async throws {
         let directory = FileManager.default.temporaryDirectory.appending(path: UUID().uuidString)
         defer { try? FileManager.default.removeItem(at: directory) }
-        let store = LibraryStore(repository: LibraryRepository(url: directory.appending(path: "library.json")))
+        let store = LibraryStore(repository: LibraryRepository(url: directory.appending(path: "library.sqlite")))
         await store.load()
         let before = store.library
         try FileManager.default.removeItem(at: directory)

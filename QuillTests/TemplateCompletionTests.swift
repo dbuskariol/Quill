@@ -77,7 +77,7 @@ struct TemplateCompletionTests {
     @Test @MainActor func workspaceDestinationsAndNewMacrosPreserveOtherDrafts() async throws {
         let directory = FileManager.default.temporaryDirectory.appending(path: UUID().uuidString)
         defer { try? FileManager.default.removeItem(at: directory) }
-        let store = LibraryStore(repository: LibraryRepository(url: directory.appending(path: "library.json")))
+        let store = LibraryStore(repository: LibraryRepository(url: directory.appending(path: "library.sqlite")))
         await store.load()
         var snippet = try #require(store.selected); snippet.body = "Unfinished"
         store.drafts[snippet.id] = snippet
@@ -85,10 +85,10 @@ struct TemplateCompletionTests {
         let first = try #require(store.selectedMacroID)
         #expect(store.destination == .macros)
         #expect(store.macroDrafts[first]?.name == "New macro")
-        store.isShowingSettings = true
-        #expect(!store.showCustomMacros)
-        store.showCustomMacros = true
-        #expect(!store.isShowingSettings)
+        store.destination = .settings
+        #expect(!(store.destination == .macros))
+        store.destination = .macros
+        #expect(!(store.destination == .settings))
         #expect(store.selectedMacroID == first)
         store.macroSearch = "Missing"
         store.createMacro()

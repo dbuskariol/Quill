@@ -80,7 +80,7 @@ struct TextExpanderImportTests {
     @Test @MainActor func storeImportPersistsAddsBacksUpAndUndoes() async throws {
         let directory = FileManager.default.temporaryDirectory.appending(path: UUID().uuidString)
         defer { try? FileManager.default.removeItem(at: directory) }
-        let repository = LibraryRepository(url: directory.appending(path: "library.json"))
+        let repository = LibraryRepository(url: directory.appending(path: "library.sqlite"))
         let store = LibraryStore(repository: repository)
         await store.load()
         let original = store.library

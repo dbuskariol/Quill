@@ -19,6 +19,7 @@ struct RenderResult: Equatable, Sendable {
     var fields: [String]
     var fieldDefinitions: [TemplateField] = []
     var zendeskPlaceholders: [String] = []
+    var format: ContentFormat = .plainText
 }
 
 enum TemplateError: LocalizedError, Equatable {
@@ -109,12 +110,24 @@ enum TemplateRenderer {
             formatter.locale = Locale(identifier: "en_US_POSIX"); formatter.timeZone = context.timeZone; formatter.dateFormat = format
             return formatter.string(from: date)
         }
-        func expand(_ item: Snippet, stack: Set<UUID>) throws {
+        func expand(_ item: Snippet, stack: Set<UUID>, destinationFormat: ContentFormat) throws {
             guard !stack.contains(item.id), stack.count < 32 else { throw TemplateError.invalid("Nested snippet cycle or depth limit reached at \(item.title).") }
             let next = stack.union([item.id])
-            try expandTokens(parse(item.body), stack: next)
+            let startOffset = output.utf16.count
+            try expandTokens(parse(item.body), stack: next, format: item.format)
+            if item.format != destinationFormat {
+                let start = String.Index(utf16Offset: startOffset, in: output)
+                let segment = String(output[start...])
+                let converted = item.format == .markdown ? try MarkdownDocument(segment).plainText : MarkdownDocument.escapeLiteral(segment)
+                if let offset = cursor, offset >= startOffset {
+                    let prefix = (segment as NSString).substring(to: offset - startOffset)
+                    cursor = startOffset + (item.format == .markdown ? try MarkdownDocument(prefix).plainText : MarkdownDocument.escapeLiteral(prefix)).utf16.count
+                }
+                output.replaceSubrange(start..., with: converted)
+            }
         }
-        func expandTokens(_ tokens: [TemplateToken], stack: Set<UUID>) throws {
+        func expandTokens(_ tokens: [TemplateToken], stack: Set<UUID>, format: ContentFormat) throws {
+            func literal(_ value: String) -> String { format == .markdown ? MarkdownDocument.escapeLiteral(value) : value }
             for token in tokens {
                 switch token {
                 case let .text(value): output += value
@@ -126,14 +139,14 @@ enum TemplateRenderer {
                     output += formatter.string(from: context.date)
                 case let .field(name):
                     try register(TemplateField(name: name))
-                    output += context.fields[name] ?? "‹\(name)›"
+                    output += literal(context.fields[name] ?? "‹\(name)›")
                 case let .input(field):
                     try register(field)
                     let value = context.fields[field.name] ?? ""
                     switch field.kind {
                     case let .choice(choices):
                         guard value.isEmpty || choices.contains(value) else { throw TemplateError.invalid("Choose a listed value for \(field.name).") }
-                        output += value.isEmpty ? "‹\(field.name)›" : value
+                        output += literal(value.isEmpty ? "‹\(field.name)›" : value)
                     case let .date(format):
                         if value.isEmpty { output += "‹\(field.name)›" }
                         else {
@@ -142,8 +155,8 @@ enum TemplateRenderer {
                             guard let date = formatter.date(from: value), formatter.string(from: date) == value else { throw TemplateError.invalid("Choose a valid date for \(field.name).") }
                             output += formatDate(date, format: format)
                         }
-                    case .optional: output += value
-                    case .singleLine, .multiline: output += value.isEmpty ? "‹\(field.name)›" : value
+                    case .optional: output += literal(value)
+                    case .singleLine, .multiline: output += literal(value.isEmpty ? "‹\(field.name)›" : value)
                     }
                 case let .formattedDate(format, offset):
                     var calendar = Calendar(identifier: .gregorian); calendar.timeZone = context.timeZone
@@ -155,26 +168,26 @@ enum TemplateRenderer {
                         guard fields.count < 100 else { throw TemplateError.invalid("Templates support up to 100 fields.") }
                         fields.append(name)
                     }
-                    try expandTokens(context.fields[name] == expected ? yes : no, stack: stack)
+                    try expandTokens(context.fields[name] == expected ? yes : no, stack: stack, format: format)
                 case .cursor:
                     guard cursor == nil else { throw TemplateError.invalid("Use only one cursor marker in the resolved template.") }
                     cursor = output.utf16.count
                 case let .snippet(abbreviation):
                     let matches = library.snippets.filter { $0.abbreviation == abbreviation }
                     guard matches.count == 1, let nested = matches.first else { throw TemplateError.invalid("Nested abbreviation \(abbreviation) is missing or ambiguous.") }
-                    try expand(nested, stack: stack)
+                    try expand(nested, stack: stack, destinationFormat: format)
                 case let .macro(name):
                     let matches = library.macros.filter { $0.name == name }
                     guard matches.count == 1, let macro = matches.first else { throw TemplateError.invalid("Custom macro \(name) is missing or ambiguous.") }
-                    try expand(Snippet(id: macro.id, groupID: itemGroupID(library), title: macro.name, abbreviation: "", body: macro.body), stack: stack)
+                    try expand(Snippet(id: macro.id, groupID: itemGroupID(library), title: macro.name, abbreviation: "", body: macro.body, format: macro.format), stack: stack, destinationFormat: format)
                 case let .zendesk(name):
                     output += "{{\(name)}}"
                 }
                 guard output.utf16.count <= 1_000_000 else { throw TemplateError.invalid("Resolved template exceeds the safety limit.") }
             }
         }
-        try expand(snippet, stack: [])
-        return RenderResult(text: output, cursorUTF16Offset: cursor, fields: fields.reduce(into: [String]()) { if !$0.contains($1) { $0.append($1) } }, fieldDefinitions: definitions, zendeskPlaceholders: ZendeskPlaceholder.expressions(in: output))
+        try expand(snippet, stack: [], destinationFormat: snippet.format)
+        return RenderResult(text: output, cursorUTF16Offset: cursor, fields: fields.reduce(into: [String]()) { if !$0.contains($1) { $0.append($1) } }, fieldDefinitions: definitions, zendeskPlaceholders: ZendeskPlaceholder.expressions(in: output), format: snippet.format)
     }
 
     static func conflicts(for item: Snippet, in library: Library) -> [Snippet] {

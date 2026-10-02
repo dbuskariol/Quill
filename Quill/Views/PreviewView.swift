@@ -13,10 +13,16 @@ struct PreviewView: View {
                 Label("Preview", systemImage: "play.rectangle").font(.headline)
                 Spacer()
                 if case let .success(preview) = result {
-                    Button(copied ? "Copied" : "Copy Preview") {
+                    Button(copied ? "Copied" : preview.format == .markdown ? "Copy Formatted" : "Copy Preview") {
                         copyAttempted = true
-                        copied = actions.copy(preview.text)
+                        copied = actions.copy(preview)
                     }.disabled(preview.fields.contains { name in fields[name, default: ""].isEmpty && (preview.fieldDefinitions.first { $0.name == name }?.isRequired ?? true) })
+                    if preview.format == .markdown {
+                        Menu("Copy As") {
+                            Button("Plain Text") { copyAttempted = true; copied = actions.copy(preview, style: .plainText) }
+                            Button("Markdown") { copyAttempted = true; copied = actions.copy(preview, style: .markdown) }
+                        }.disabled(preview.fields.contains { name in fields[name, default: ""].isEmpty && (preview.fieldDefinitions.first { $0.name == name }?.isRequired ?? true) })
+                    }
                 }
             }
             if copyAttempted, !copied, let message = actions.message { Text(message).foregroundStyle(.red) }
@@ -29,10 +35,16 @@ struct PreviewView: View {
                 ForEach(preview.fields, id: \.self) { name in
                     fieldControl(preview.fieldDefinitions.first { $0.name == name } ?? TemplateField(name: name))
                 }
-                Text(preview.text.isEmpty ? "Your preview will appear here." : preview.text)
-                    .id(preview.text)
-                    .textSelection(.enabled).frame(maxWidth: .infinity, minHeight: 80, alignment: .topLeading)
-                if let offset = preview.cursorUTF16Offset {
+                if preview.format == .markdown {
+                    if let document = try? MarkdownDocument(preview.text) {
+                        FormattedPreview(document: document).frame(height: 200)
+                        ForEach(document.warnings, id: \.self) { warning in Label(warning, systemImage: "exclamationmark.triangle").font(.callout).foregroundStyle(.secondary) }
+                    } else { Label("Markdown could not be rendered. Copy the source as Markdown to preserve it.", systemImage: "exclamationmark.triangle").foregroundStyle(.orange) }
+                } else {
+                    Text(preview.text.isEmpty ? "Your preview will appear here." : preview.text)
+                        .id(preview.text).textSelection(.enabled).frame(maxWidth: .infinity, minHeight: 80, alignment: .topLeading)
+                }
+                if let offset = preview.cursorUTF16Offset, preview.format == .plainText {
                     Text("Cursor after \((preview.text as NSString).substring(to: offset).count) characters")
                         .font(.caption).foregroundStyle(.secondary)
                         .help("Used during expansion. Copy Preview copies text only.")
@@ -41,6 +53,7 @@ struct PreviewView: View {
                 Label(error.localizedDescription, systemImage: "exclamationmark.triangle").foregroundStyle(.orange)
             }
         }.padding(16).background(.quaternary.opacity(0.4), in: RoundedRectangle(cornerRadius: 10))
+            .onChange(of: (try? result.get())?.format) { _, _ in copied = false; copyAttempted = false }
             .onChange(of: resultText) { _, _ in copied = false; copyAttempted = false }
     }
     @ViewBuilder private func fieldControl(_ field: TemplateField) -> some View {
