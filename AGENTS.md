@@ -1,6 +1,6 @@
 # Quill engineering guide
 
-Quill is a native macOS 26, local-first snippet app. Read README.md and Documentation/ARCHITECTURE.md before changes. The current development build includes a consent-gated Accessibility expansion engine and signed updater integration. Runtime permission/target acceptance and distribution configuration remain open; do not claim release readiness or TextExpander parity.
+Quill is a native macOS 26, local-first snippet app. Read README.md and Documentation/ARCHITECTURE.md before changes. The current development build includes a consent-gated Accessibility expansion engine and signed updater integration. Runtime permission/target acceptance and notarized distribution acceptance remain open; do not claim release readiness or TextExpander parity.
 
 - Use Swift 6 complete strict concurrency, Observation, SwiftUI, and narrow AppKit integration. Keep Models/Services/Stores/Views/App/Support separated. No third-party runtime dependencies without a concrete need.
 - Follow macOS appearance, standard source lists, toolbars, Settings, commands, confirmation alerts, keyboard access, and VoiceOver labels. Never replace native controls with web-like chrome.

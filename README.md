@@ -74,7 +74,7 @@ Quill targets macOS 26 with Swift 6 complete strict concurrency.
 | Markdown | Foundation semantics and native attributed text |
 | Persistence | Actor-owned SQLite transactions, immutable revisions, draft checkpoints |
 | Expansion | Consent-gated event monitoring and verified Accessibility replacement |
-| Updates | Sparkle 2.10.0; distribution configuration pending |
+| Updates | Sparkle 2.10.0; signed Quill feed and app-specific key |
 
 The active library has one current storage schema, with no legacy migration or runtime storage fallback. Read the [architecture](Documentation/ARCHITECTURE.md) for ownership, rendering boundaries, and persistence decisions.
 
@@ -106,4 +106,4 @@ Templates, history, draft checkpoints, and fill-in values stay on the Mac. Quill
 
 Quill is in active development. The library, embedded Settings, TextExpander import, reusable macros, Zendesk placeholders, native completion, Markdown copying, history, backups, and draft recovery are implemented. Full WYSIWYG editing, rich automatic expansion, cloud sync, and team libraries remain future work.
 
-This is a development build. Permission-enabled expansion, Zendesk paste behavior, full accessibility acceptance, signing, and distribution still need acceptance. Update checks remain inactive until a signed feed and public key are configured. See [release preparation](Documentation/RELEASE.md), the [feature matrix](Documentation/FEATURE_MATRIX.md), and the [collaboration roadmap](Documentation/COLLABORATION_ROADMAP.md).
+This is a development build. Permission-enabled expansion, Zendesk paste behavior, full accessibility acceptance, signing, and distribution still need acceptance. Automatic update checks are off by default; manual checks use the signed Quill feed. See [release preparation](Documentation/RELEASE.md), the [feature matrix](Documentation/FEATURE_MATRIX.md), and the [collaboration roadmap](Documentation/COLLABORATION_ROADMAP.md).

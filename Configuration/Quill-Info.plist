@@ -63,5 +63,9 @@
 			</array>
 		</dict>
 	</array>
+	<key>SUFeedURL</key>
+	<string>https://github.com/dbuskariol/Quill/releases/latest/download/appcast.xml</string>
+	<key>SUPublicEDKey</key>
+	<string>EoJ9OrmFpRjlPb74MQ976NCmJ3V5S+h14c18uYtT/JA=</string>
 </dict>
 </plist>
