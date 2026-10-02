@@ -119,3 +119,12 @@ All six public assets were downloaded anonymously using fresh latest requests in
 The [native audit](UI_UX_AUDIT.md) records source and Computer Use coverage across workspace editors, setup, all six Settings pages, completion, Quick Actions, groups, history, recovery, import and backup review. Disposable libraries protected the personal library. The walkthrough exposed and fixed a live text-container layout exception, missing Statistics reset confirmation and custom-placeholder Return submission. Real native captures were refreshed. External directed typing and menu-bar automation limits are stated explicitly in the audit.
 
 `/tmp/quill-0.1.5-final-polish-gate.log` passed 96 tests across 15 suites with a verified nonzero xcresult count and a universal arm64/x86_64 Release build. The native layout regressions pass. Script, metadata and whitespace checks passed.
+
+
+## Published 0.1.5 — 2026-10-02
+
+[Quill 0.1.5](https://github.com/dbuskariol/Quill/releases/tag/v0.1.5) is public, non-prerelease and latest. Its annotated tag resolves to `00cddc3848dcdcb8500f2373dcabd639e46c3eb1`, matching the clean-source notarized manifest. [CI run 37011805488](https://github.com/dbuskariol/Quill/actions/runs/37011805488) passed both macos-26 and macos-26-intel. The final local gate passed 96 tests across 15 suites plus universal Release. All release commits use the required dbuskariol author and committer.
+
+`/tmp/quill-0.1.5-release.log` passed Developer ID signing, both app/DMG notarizations, stapling, Gatekeeper, Sparkle signatures and package comparisons. The exact notarized 0.1.5 (6) app is installed in Applications. Native inspection confirmed both grants retained, automatic Every Time Quill Opens resumption, TextEdit-only immediate matching, correct version/build, focused Quick Actions search accepting typing without a click and Escape dismissal. The existing personal library was opened without edits.
+
+All six public assets were downloaded anonymously through fresh latest-download requests to `/Users/nftdannyboy/Library/Developer/Quill-0.1.5-public-verification-20261002`. SHA-256 matched every local finalized asset, and SHA256SUMS passed. `/tmp/quill-0.1.5-public-verification.log` passed public feed/archive/notes signature verification, expanded ZIP comparison, nested signatures and notarized Gatekeeper assessment. This verifies distribution artifacts; it does not establish an actual Sparkle installation/rollback or the external-input boundaries in the native audit.
