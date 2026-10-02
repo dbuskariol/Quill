@@ -36,6 +36,43 @@ import Carbon
         return Self(pid: pid, element: element, text: text, selection: selection)
     }
 
+    func insertionBounds() throws -> NSRect {
+        var range = selection
+        var bounds: CFTypeRef?
+        guard let rangeValue = AXValueCreate(.cfRange, &range),
+              AXUIElementCopyParameterizedAttributeValue(element, kAXBoundsForRangeParameterizedAttribute as CFString,
+                                                         rangeValue, &bounds) == .success,
+              let bounds, CFGetTypeID(bounds) == AXValueGetTypeID() else {
+            throw LibraryError.invalid("This editor does not expose the insertion point for a fill-in panel.")
+        }
+        var rect = CGRect.zero
+        guard AXValueGetValue(bounds as! AXValue, .cgRect, &rect), rect.origin.x.isFinite, rect.origin.y.isFinite,
+              let primary = NSScreen.screens.first else {
+            throw LibraryError.invalid("The editor did not provide a valid insertion point.")
+        }
+        return ExpansionPanelLayout.appKitRect(rect, primaryDisplayTop: primary.frame.maxY)
+    }
+
+    /// Closing a nonactivating panel returns keyboard focus asynchronously. Wait for
+    /// that handoff, never activate another app or overwrite changed target content.
+    func awaitKeyboardReturn() async throws {
+        for _ in 0..<20 {
+            guard !Task.isCancelled, AXIsProcessTrusted(), !IsSecureEventInputEnabled(),
+                  NSWorkspace.shared.frontmostApplication?.processIdentifier == pid else {
+                throw LibraryError.invalid("The active editor changed. Your abbreviation was kept.")
+            }
+            if let current = Self.capture(pid: pid), CFEqual(current.element, element) {
+                guard current.text == text, current.selection.location == selection.location,
+                      current.selection.length == selection.length else {
+                    throw LibraryError.invalid("The insertion point or text changed. Your abbreviation was kept.")
+                }
+                return
+            }
+            try await Task.sleep(for: .milliseconds(15))
+        }
+        throw LibraryError.invalid("The editor did not return keyboard focus. Your abbreviation was kept.")
+    }
+
     func replace(_ match: ExpansionMatch, with result: RenderResult) throws {
         guard let current = Self.capture(pid: pid), CFEqual(element, current.element), current.text == text,
               current.selection.location == selection.location, current.selection.length == selection.length, match.range.location >= 0,

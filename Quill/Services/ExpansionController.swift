@@ -153,24 +153,23 @@ import Observation
                 if rendered.fields.isEmpty {
                     try self.insert(rendered, target: target, match: match, snippet: snippet)
                 } else {
+                    let anchor = try target.insertionBounds()
                     self.awaitingFields = true
                     let transactionID = UUID()
                     self.formTransaction = transactionID
                     self.status = "Complete the fill-ins to expand \(snippet.title)."
-                    self.prompt.show(snippet: snippet, library: self.store.library) { [weak self] result in
+                    self.prompt.show(snippet: snippet, library: self.store.library, anchor: anchor) { [weak self] result in
                         guard let self, self.formTransaction == transactionID else { return }
                         guard let result else {
                             self.awaitingFields = false; self.formTransaction = nil
                             self.status = "Expansion cancelled. Your abbreviation was kept."
-                            if self.isEnabled { app.activate() }
                             return
                         }
                         guard self.isEnabled, self.policy.allows(bundleID), self.formTransaction == transactionID else {
                             throw LibraryError.invalid("Expansion was paused or its application settings changed.")
                         }
-                        // Await target activation without destroying the form or its literal answers.
-                        app.activate()
-                        try await Task.sleep(for: .milliseconds(80))
+                        // The editor remains active while the nonactivating panel accepts fields.
+                        try await target.awaitKeyboardReturn()
                         guard self.isEnabled, self.policy.allows(bundleID), self.formTransaction == transactionID else {
                             throw LibraryError.invalid("Expansion was paused or its application settings changed.")
                         }

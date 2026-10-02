@@ -27,11 +27,11 @@ struct TemplateFieldsView: View {
             Picker(field.name, selection: binding) {
                 Text("Choose…").tag("")
                 ForEach(choices, id: \.self) { Text($0).tag($0) }
-            }
+            }.focused($focusedField, equals: field.name)
         case .date:
             DatePicker(field.name, selection: Binding(get: {
                 dateFormatter.date(from: binding.wrappedValue) ?? .now
-            }, set: { binding.wrappedValue = dateFormatter.string(from: $0) }), displayedComponents: .date)
+            }, set: { binding.wrappedValue = dateFormatter.string(from: $0) }), displayedComponents: .date).focused($focusedField, equals: field.name)
             if binding.wrappedValue.isEmpty {
                 Button("Use Today for \(field.name)") { binding.wrappedValue = dateFormatter.string(from: .now) }
             }
