@@ -22,6 +22,7 @@ struct CommandPaletteView: View {
                 Button("Done") { dismiss() }.keyboardShortcut(.cancelAction)
             }
             TextField("Find a snippet", text: $query).textFieldStyle(.roundedBorder).focused($searchFocused)
+                .background(InputFocusOnPresentation(enabled: true) { searchFocused = true })
             HSplitView {
                 List(items, selection: $selectedID) { item in
                     VStack(alignment: .leading) {
@@ -45,7 +46,7 @@ struct CommandPaletteView: View {
                 Spacer()
             }
         }.padding(20).frame(width: 720, height: 500)
-        .onAppear { selectedID = items.first?.id; searchFocused = true }
+        .onAppear { selectedID = items.first?.id }
         .onChange(of: query) { _, _ in if !items.contains(where: { $0.id == selectedID }) { selectedID = items.first?.id } }
         .onChange(of: selectedID) { _, _ in fields = [:]; contextDate = .now }
     }

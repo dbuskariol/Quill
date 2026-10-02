@@ -84,7 +84,7 @@ Quill uses SwiftUI split views, system toolbars, menus, SF Symbols, native panel
 
 Expansion defaults to **Until Quill Quits** and requires explicit permission setup and Enable. Choose **15 Minutes**, **1 Hour**, or **Across Launches** to control its duration. Across Launches resumes only after you explicitly enable it; Pause disarms automatic resumption. Closing the library can leave Quill running in the menu bar, and its Dock icon can be hidden while menu bar access remains available. Quit Quill always ends the running session.
 
-Abbreviations can expand immediately or after Space, Tab or Return. Templates with fill-ins open a native form before insertion. Choose All Applications or Selected Applications, then manage selections and exclusions through the native app chooser and +/− controls. Writable Accessibility text selections are required; secure input and password fields remain protected. Permission-enabled external target acceptance is tracked in [expansion acceptance](Documentation/EXPANSION_ACCEPTANCE.md).
+Abbreviations can expand immediately or after Space, Tab or Return. Templates with fill-ins open a compact native panel beside the insertion point, with keyboard focus ready for input. Return expands a completed single-line form; Command-Return submits multiline input; Escape cancels. Choose All Applications or Selected Applications, then manage selections and exclusions through the native app chooser and +/− controls. Writable Accessibility text selections are required; secure input and password fields remain protected. Permission-enabled external target acceptance is tracked in [expansion acceptance](Documentation/EXPANSION_ACCEPTANCE.md).
 
 ![Embedded expansion settings with explicit enablement, session duration, permission status, and abbreviation matching controls](Documentation/Screenshots/expansion-settings.png)
 
@@ -120,7 +120,7 @@ Run the CI-equivalent gate with:
 ./script/verify-ci.sh
 ```
 
-The gate validates scripts, metadata, whitespace, a nonzero Swift Testing result, and an unsigned universal Release build. GitHub Actions runs it on macOS 26 Apple silicon and Intel. The latest local verification passed 87 tests across 12 suites and the universal Release build. See [verification evidence](Documentation/VERIFICATION.md) for observations and remaining acceptance.
+The gate validates scripts, metadata, whitespace, a nonzero Swift Testing result, and an unsigned universal Release build. GitHub Actions runs it on macOS 26 Apple silicon and Intel. The latest local verification passed 88 tests across 13 suites and the universal Release build. See [verification evidence](Documentation/VERIFICATION.md) for observations and remaining acceptance.
 
 Repository maintainers use `./script/setup-repository.sh` to configure the required local author/committer identity and hooks. `./script/gh-quill.sh` pins GitHub operations to `dbuskariol` without changing the globally active account.
 

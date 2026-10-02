@@ -10,8 +10,8 @@ Research checked 2 October 2026 against official TextExpander sources. Status de
 | Full WYSIWYG and images | Planned | Structured rich editing, attachments and lossless rich target round trips |
 | Groups, tags, favorites, search | Partial | Group create/rename/delete with snippet reassignment and recovery, tag editing/search, favorites implemented; tag browser and user sorting planned |
 | Quick actions and command palette | Partial | Cmd-K saved-snippet search, typed form preview/copy and library navigation; global shortcut and external form insertion planned |
-| Single-line fill-ins | Partial | Named literal fields, required validation and shared native expansion forms implemented; external transaction acceptance pending |
-| Multiline, popup, optional fill-ins | Partial | Typed inline schemas, shared native preview/expansion controls and choice validation; external transaction acceptance and reusable schemas/defaults pending |
+| Single-line fill-ins | Implemented, TextEdit acceptance confirmed | Named literal fields, required validation and shared compact native expansion controls. User confirmed notes insertion; native presentation tests verify first responder without clicking |
+| Multiline, popup, optional fill-ins | Partial | Typed inline schemas, shared native preview/expansion controls and choice validation; native initial keyboard focus tested; external typed-form coverage and reusable schemas/defaults pending |
 | Conditional branches | Partial | Nested if/else/end blocks resolve only selected text, fields and references. Native expansion forms implemented; external transaction acceptance pending; images planned |
 | Date picker fill-in | Implemented in preview | Shared native date chooser in preview and expansion form, explicit confirmation of today, strict date validation and format tests |
 | Date/time macros | Partial | ISO date/time, custom ICU date formats and Gregorian day offsets implemented; broader calendar/unit math planned |

@@ -12,14 +12,8 @@ import SwiftUI
         self.completion = completion
         let rendered = try? TemplateRenderer.render(snippet, library: library)
         let fields = rendered?.fieldDefinitions ?? []
-        let height = min(CGFloat(420), 78 + fields.reduce(CGFloat.zero) { total, field in
-            switch field.kind {
-            case .multiline: total + 108
-            case .date: total + 80
-            default: total + 42
-            }
-        })
-        let panel = ExpansionInputPanel(contentRect: NSRect(x: 0, y: 0, width: 320, height: max(120, height)),
+        let height = 52 + ExpansionPanelLayout.fieldsHeight(fields)
+        let panel = ExpansionInputPanel(contentRect: NSRect(x: 0, y: 0, width: 280, height: max(78, height)),
                             styleMask: [.titled, .utilityWindow, .nonactivatingPanel], backing: .buffered, defer: false)
         panel.title = snippet.title
         panel.isFloatingPanel = true
@@ -101,8 +95,9 @@ private struct ExpansionForm: View {
                     case let .failure(error):
                         Text(error.localizedDescription).foregroundStyle(.red)
                     }
-                }
+                }.padding(4)
             }
+            .frame(height: fieldHeight)
             if let insertionError { Text(insertionError).foregroundStyle(.red).textSelection(.enabled) }
             HStack {
                 Button("Cancel") { submit(nil) }.keyboardShortcut(.cancelAction).disabled(submitting)
@@ -110,13 +105,18 @@ private struct ExpansionForm: View {
                 Button("Expand") { if let value = try? result.get() { submit(value) } }
                     .keyboardShortcut(.defaultAction).disabled(!isReady || submitting)
             }
-        }.padding(12).frame(minWidth: 296, minHeight: 96)
+        }.padding(10).frame(minWidth: 260)
+        .controlSize(.small)
         .onSubmit { if isReady, let value = try? result.get() { submit(value) } }
         .onKeyPress(.return, phases: .down) { event in
             guard event.modifiers.contains(.command), isReady, let value = try? result.get() else { return .ignored }
             submit(value)
             return .handled
         }
+    }
+    private var fieldHeight: CGFloat {
+        guard let preview = try? result.get() else { return 40 }
+        return ExpansionPanelLayout.fieldsHeight(preview.fieldDefinitions)
     }
     private func submit(_ value: RenderResult?) {
         guard !submitting else { return }
@@ -144,6 +144,15 @@ private struct ExpansionForm: View {
 
 /// AX coordinates use the primary display's top-left; AppKit uses its bottom-left.
 enum ExpansionPanelLayout {
+    static func fieldsHeight(_ fields: [TemplateField]) -> CGFloat {
+        min(340, max(22, fields.reduce(CGFloat.zero) { total, field in
+            switch field.kind {
+            case .multiline: total + 104
+            case .date: total + 62
+            default: total + 30
+            }
+        }))
+    }
     static func appKitRect(_ rect: CGRect, primaryDisplayTop: CGFloat) -> NSRect {
         NSRect(x: rect.minX, y: primaryDisplayTop - rect.maxY, width: rect.width, height: rect.height)
     }
