@@ -2,11 +2,25 @@
 
 Quill is a native snippet library and template editor for macOS 26. It brings reusable replies, custom macros, Zendesk message placeholders, TextExpander import, Markdown preview, and local revision history into one focused Mac workspace.
 
+[![CI](https://github.com/dbuskariol/Quill/actions/workflows/verify.yml/badge.svg)](https://github.com/dbuskariol/Quill/actions/workflows/verify.yml)
+[![Release](https://img.shields.io/github/v/release/dbuskariol/Quill)](https://github.com/dbuskariol/Quill/releases/latest)
+![macOS 26](https://img.shields.io/badge/macOS-26%2B-111111?logo=apple&logoColor=white)
+
 <img src="Design/Quill-Icon-1024.png" alt="Quill app icon" width="128">
 
 ![Quill’s native workspace with a support reply, reusable sign-off, Zendesk placeholders, and formatted Markdown preview](Documentation/Screenshots/library-workspace.png)
 
-Screenshots use a separate sample library. Click an image to inspect it at full resolution.
+Screenshots show the current development build using a separate sample library. Click an image to inspect it at full resolution.
+
+## Install
+
+Quill requires macOS 26 or later.
+
+1. Download the notarized DMG from the [latest release](https://github.com/dbuskariol/Quill/releases/latest).
+2. Open it and drag Quill to Applications.
+3. Open Quill from Applications to create, import, preview, and copy snippets.
+
+For automatic expansion, open **Settings → Expansion**, choose applications, grant Accessibility and Input Monitoring, then enable expansion. If Quill is missing from Input Monitoring, use its + button and choose `/Applications/Quill.app`. The release includes a signed updater ZIP, checksums, and a provenance manifest.
 
 ## A useful snippet library
 
@@ -106,7 +120,7 @@ Run the CI-equivalent gate with:
 ./script/verify-ci.sh
 ```
 
-The gate validates scripts, metadata, whitespace, a nonzero Swift Testing result, and an unsigned universal Release build. GitHub Actions runs it on macOS 26 Apple silicon and Intel. The latest local verification passed 82 tests across 11 suites and the universal Release build. See [verification evidence](Documentation/VERIFICATION.md) for observations and remaining acceptance.
+The gate validates scripts, metadata, whitespace, a nonzero Swift Testing result, and an unsigned universal Release build. GitHub Actions runs it on macOS 26 Apple silicon and Intel. The latest local verification passed 84 tests across 11 suites and the universal Release build. See [verification evidence](Documentation/VERIFICATION.md) for observations and remaining acceptance.
 
 Repository maintainers use `./script/setup-repository.sh` to configure the required local author/committer identity and hooks. `./script/gh-quill.sh` pins GitHub operations to `dbuskariol` without changing the globally active account.
 

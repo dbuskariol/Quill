@@ -1,19 +1,21 @@
-# Quill 0.1.1
+# Quill 0.1.2
 
-Clearer native application controls and cleaner defaults.
+Control expansion sessions from a native menu bar, with clearer permission setup and reusable template fill-ins.
 
-- Choose All Applications or Selected Applications for abbreviation expansion.
-- Add apps through the macOS application chooser, with recognizable names and icons instead of bundle identifiers.
-- Edit exclusions using native +/− controls, Delete, or the Remove Application context menu.
-- Keep application rules consistent when moving an app between the selected and excluded lists.
-- Pause expansion when the last selected app is removed. Password fields and secure input remain protected in every mode.
-- Place the smaller Groups management button on the right of the sidebar header, with additional trailing padding.
-- Use a name fill-in in the starter email signature. Existing saved templates are preserved.
+- Expand abbreviations immediately, or choose expansion after Space, Tab or Return. Prefix overlaps wait for the longer abbreviation or an explicit delimiter.
+- Complete single-line, multiline, choice, optional and date fields in a native expansion form. The form retains answers when the original editor rejects insertion or its focus changes.
+- Choose Until Quill Quits, 15 Minutes, 1 Hour or Across Launches. Across Launches resumes after explicit enablement; Pause disarms resumption.
+- Keep Quill running when its library closes, hide its Dock icon while retaining menu bar access, and launch at login.
+- Open the library, Quick Actions and Settings, change session duration, pause expansion or quit from a native status menu.
+- Set up Accessibility and Input Monitoring with specific settings routes and guidance for manually adding Quill when needed. Interactive builds use the release signing identity at `/Applications/Quill.app`.
+- Preserve cursor placement when Markdown becomes visible text, including mixed-format reusable blocks, nested snippets, lists, Unicode and Zendesk placeholders.
+- Exclude navigation, deletion and function keys from expansion matching.
+- Copy formatted replies with destination-native text colors. The README includes a native screenshot gallery and installation instructions.
 
 ## Install or update
 
-Requires macOS 26 or later. The universal app supports Apple silicon and Intel Macs. Open the disk image and drag Quill into Applications, or choose Check for Updates in Quill.
+Requires macOS 26 or later. The universal app supports Apple silicon and Intel Macs. Open the disk image and drag Quill into Applications, or choose Check for Updates in Quill. Review the selected applications in Expansion settings, grant both permissions, and explicitly enable expansion.
 
-## Current limitations
+## Content and privacy
 
-Expansion supports plain-text templates without fill-ins in supported Accessibility editors and starts paused at launch. Permission-enabled expansion and Zendesk rich-editor paste behavior still need broader acceptance. This release uses the current expansion-preferences format; preferences from 0.1.0 reset to Selected Applications with expansion paused. Existing library definitions, history and drafts use the same storage schema.
+Expansion inserts visible text into editors that expose writable Accessibility text selections. Quick Actions offers formatted Markdown copying. Zendesk resolves its own placeholders; Quill preserves them locally. Secure input and password fields stay excluded. The library keeps its current SQLite and JSON interchange schemas, with no legacy migration layer. Existing saved definitions, history and authored drafts remain in the current library.

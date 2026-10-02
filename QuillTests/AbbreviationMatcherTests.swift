@@ -74,6 +74,24 @@ struct AbbreviationMatcherTests {
         #expect(!policy.excludedApplications.contains { $0.id == app.id })
         #expect(policy.allows(app.id))
     }
+    @Test @MainActor func navigationAndDeletionNeverTriggerImmediateExpansion() {
+        var policy = ExpansionPolicy()
+        for key: Int64 in [51, 117, 53, 114, 123, 124, 125, 126, 115, 119, 116, 121, 71, 104, 102, 122, 120, 99, 118, 96, 97, 98, 100, 101, 109, 103, 111, 105, 107, 113, 106, 64, 79, 80, 90] {
+            #expect(!ExpansionController.isTextTrigger(key: key, characters: "", policy: policy))
+        }
+        // Empty Unicode payloads are valid hardware keys; AX confirms the committed text.
+        #expect(ExpansionController.isTextTrigger(key: 13, characters: "", policy: policy))
+        policy.trigger = .delimiter
+        #expect(!ExpansionController.isTextTrigger(key: 13, characters: "w", policy: policy))
+        for key: Int64 in [36, 76, 48, 49] {
+            #expect(ExpansionController.isTextTrigger(key: key, characters: "", policy: policy))
+        }
+        policy.delimiters = " "
+        #expect(!ExpansionController.isTextTrigger(key: 36, characters: "", policy: policy))
+        #expect(!ExpansionController.isTextTrigger(key: 48, characters: "", policy: policy))
+        #expect(ExpansionController.isTextTrigger(key: 49, characters: "", policy: policy))
+    }
+
     @Test @MainActor func controllerNeverEnablesOrRequestsPermissionOnLaunch() {
         let suite = "QuillTests.\(UUID().uuidString)"
         let defaults = UserDefaults(suiteName: suite)!

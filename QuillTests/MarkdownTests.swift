@@ -79,6 +79,32 @@ struct MarkdownTests {
         }
     }
 
+    @Test func mixedFormatReferencesAndLiteralFieldsKeepVisibleCursorPositions() throws {
+        let group = SnippetGroup(name: "Work")
+        let block = CustomMacro(name: "Block", body: "**He{{cursor}}llo**", format: .markdown)
+        let plain = Snippet(groupID: group.id, title: "Plain", abbreviation: ";plain", body: "Before {{macro:Block}} After")
+        let first = try TemplateRenderer.render(plain, library: Library(groups: [group], snippets: [plain], macros: [block]))
+        #expect(first.text == "Before Hello After")
+        #expect(first.cursorUTF16Offset == 9)
+
+        let child = Snippet(groupID: group.id, title: "Child", abbreviation: ";child", body: "[He{{cursor}}llo](https://example.com)", format: .markdown)
+        var parent = plain; parent.body = "Before {{snippet:;child}} After"
+        let second = try TemplateRenderer.render(parent, library: Library(groups: [group], snippets: [parent, child]))
+        #expect(second.text == "Before Hello After")
+        #expect(second.cursorUTF16Offset == 9)
+
+        let literalBlock = CustomMacro(name: "Literal", body: "*He{{cursor}}llo*")
+        var rich = plain; rich.format = .markdown; rich.body = "Before {{macro:Literal}} After"
+        let third = try TemplateRenderer.render(rich, library: Library(groups: [group], snippets: [rich], macros: [literalBlock])).plainTextResult()
+        #expect(third.text == "Before *Hello* After")
+        #expect(third.cursorUTF16Offset == 10)
+
+        rich.body = "{{field:name}}{{cursor}} end"
+        let fourth = try TemplateRenderer.render(rich, library: Library(groups: [group], snippets: [rich]), context: .init(fields: ["name": "**Alex** 🙂 {{ticket.id}}"])).plainTextResult()
+        #expect(fourth.text == "**Alex** 🙂 {{ticket.id}} end")
+        #expect(fourth.cursorUTF16Offset == "**Alex** 🙂 {{ticket.id}}".utf16.count)
+    }
+
     @Test @MainActor func formattedCopyAndRepeatKeepAllFormatsOnAnOwnedPasteboard() throws {
         let name = "QuillTests-" + UUID().uuidString, defaults = try #require(UserDefaults(suiteName: name))
         let board = NSPasteboard(name: .init(name))

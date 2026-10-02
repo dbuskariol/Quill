@@ -128,10 +128,19 @@ enum TemplateRenderer {
             if item.format != destinationFormat {
                 let start = String.Index(utf16Offset: startOffset, in: output)
                 let segment = String(output[start...])
-                let converted = item.format == .markdown ? try MarkdownDocument(segment).plainText : MarkdownDocument.escapeLiteral(segment)
-                if let offset = cursor, offset >= startOffset {
-                    let prefix = (segment as NSString).substring(to: offset - startOffset)
-                    cursor = startOffset + (item.format == .markdown ? try MarkdownDocument(prefix).plainText : MarkdownDocument.escapeLiteral(prefix)).utf16.count
+                let converted: String
+                if item.format == .markdown {
+                    let document = try MarkdownDocument(segment)
+                    converted = document.plainText
+                    if let offset = cursor, offset >= startOffset {
+                        cursor = startOffset + (try document.plainTextCursorOffset(for: offset - startOffset))
+                    }
+                } else {
+                    converted = MarkdownDocument.escapeLiteral(segment)
+                    if let offset = cursor, offset >= startOffset {
+                        let prefix = (segment as NSString).substring(to: offset - startOffset)
+                        cursor = startOffset + MarkdownDocument.escapeLiteral(prefix).utf16.count
+                    }
                 }
                 output.replaceSubrange(start..., with: converted)
             }
