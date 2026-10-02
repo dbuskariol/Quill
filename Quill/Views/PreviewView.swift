@@ -12,18 +12,18 @@ struct PreviewView: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
             HStack {
-                Label("Preview", systemImage: "play.rectangle").font(.headline)
+                Text("Preview").font(.headline)
                 Spacer()
                 if case let .success(preview) = result, showsCopyActions {
                     Button(copied ? "Copied" : preview.format == .markdown ? "Copy Formatted" : "Copy Preview") {
                         copyAttempted = true
                         copied = actions.copy(preview)
-                    }.disabled(preview.fields.contains { name in fields[name, default: ""].isEmpty && (preview.fieldDefinitions.first { $0.name == name }?.isRequired ?? true) })
+                    }.disabled(!preview.canSubmit(fields: fields))
                     if preview.format == .markdown {
                         Menu("Copy As") {
                             Button("Plain Text") { copyAttempted = true; copied = actions.copy(preview, style: .plainText) }
                             Button("Markdown") { copyAttempted = true; copied = actions.copy(preview, style: .markdown) }
-                        }.disabled(preview.fields.contains { name in fields[name, default: ""].isEmpty && (preview.fieldDefinitions.first { $0.name == name }?.isRequired ?? true) })
+                        }.disabled(!preview.canSubmit(fields: fields))
                     }
                 }
             }
@@ -37,12 +37,12 @@ struct PreviewView: View {
                 TemplateFieldsView(result: preview, fields: $fields, focusInitially: focusFieldsInitially)
                 if preview.format == .markdown {
                     if let document = try? MarkdownDocument(preview.text) {
-                        FormattedPreview(document: document).frame(height: 200)
+                        FormattedPreview(document: document)
                         ForEach(document.warnings, id: \.self) { warning in Label(warning, systemImage: "exclamationmark.triangle").font(.callout).foregroundStyle(.secondary) }
                     } else { Label("Markdown could not be rendered. Copy the source as Markdown to preserve it.", systemImage: "exclamationmark.triangle").foregroundStyle(.orange) }
                 } else {
                     Text(preview.text.isEmpty ? "Your preview will appear here." : preview.text)
-                        .id(preview.text).textSelection(.enabled).frame(maxWidth: .infinity, minHeight: 80, alignment: .topLeading)
+                        .id(preview.text).textSelection(.enabled).frame(maxWidth: .infinity, alignment: .topLeading)
                 }
                 if preview.cursorUTF16Offset != nil, let visible = try? preview.plainTextResult(), let offset = visible.cursorUTF16Offset {
                     Text("Cursor after \((visible.text as NSString).substring(to: offset).count) characters")

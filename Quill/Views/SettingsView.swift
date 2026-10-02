@@ -11,10 +11,11 @@ struct SettingsView: View {
     @Environment(\.scenePhase) private var scenePhase
     @SceneStorage("settings.category") private var pageName = SettingsPage.general.rawValue
     @State private var proposedHistoryLimit: Int?
+    @State private var confirmStatisticsReset = false
     private var page: SettingsPage { SettingsPage(rawValue: pageName) ?? .general }
     var body: some View {
         VStack(spacing: 0) {
-            HStack(spacing: 6) {
+            ScrollView(.horizontal) { HStack(spacing: 6) {
                 ForEach(SettingsPage.allCases) { item in
                     Button { pageName = item.rawValue } label: {
                         Label(item.rawValue, systemImage: item.symbol)
@@ -24,11 +25,11 @@ struct SettingsView: View {
                         .accessibilityAddTraits(page == item ? .isSelected : []).help(item.rawValue)
                 }
                 Spacer(minLength: 0)
-            }.padding(.horizontal, 22).frame(height: 52).background(.bar)
+            }.padding(.horizontal, 22) }.scrollIndicators(.hidden).frame(height: 52).background(.bar)
             Divider()
             Form {
                 switch page {
-                case .statistics: StatisticsSettingsView(statistics: store.statistics, store: store)
+                case .statistics: StatisticsSettingsView(statistics: store.statistics, store: store, requestReset: { confirmStatisticsReset = true })
                 case .expansion: if let expansion { ExpansionSettingsView(expansion: expansion) }
                 case .general: general
                 case .storage: storage
@@ -43,6 +44,10 @@ struct SettingsView: View {
         .onAppear { applyRequestedPage(); preferences.refreshLoginStatus(); Task { await store.refreshHistory() } }
         .onChange(of: store.requestedSettingsPage) { _, _ in applyRequestedPage() }
         .onChange(of: scenePhase) { _, phase in if phase == .active { preferences.refreshLoginStatus(); expansion?.refreshPermissions() } }
+        .alert("Reset Local Statistics?", isPresented: $confirmStatisticsReset) {
+            Button("Cancel", role: .cancel) { }
+            Button("Reset", role: .destructive) { store.statistics.reset() }
+        } message: { Text("This clears the saved aggregate counts on this Mac.") }
         .alert("Keep Fewer Versions?", isPresented: Binding(get: { proposedHistoryLimit != nil }, set: { if !$0 { proposedHistoryLimit = nil } }), presenting: proposedHistoryLimit) { limit in
             Button("Cancel", role: .cancel) { proposedHistoryLimit = nil }
             Button("Apply", role: .destructive) {
@@ -55,7 +60,7 @@ struct SettingsView: View {
             Button("Replace", role: .destructive) { Task { await store.applyImport(imported) } }
                 .disabled(store.hasUnsavedChanges || store.isBusy)
         } message: { imported in
-            Text("Import \(imported.snippets.count) snippets in \(imported.groups.count) groups? Your current saved library will be backed up first. Save or revert all drafts before replacing it.")
+            Text("Import \(imported.snippets.count) \(imported.snippets.count == 1 ? "snippet" : "snippets"), \(imported.macros.count) \(imported.macros.count == 1 ? "custom macro" : "custom macros") and \(imported.groups.count) \(imported.groups.count == 1 ? "group" : "groups")? Your current saved library will be backed up first. Save or revert all drafts before replacing it.")
         }
 
     }
@@ -112,14 +117,16 @@ struct SettingsView: View {
                     }.disabled(!store.isLoaded || store.isBusy)
                 }
             }
-            Section("History & Recovery") {
-                Button("Open Backup…", action: openBackup).disabled(store.isBusy || store.hasUnsavedChanges)
+            Section("Template History") {
                 Picker("Versions per template", selection: Binding(get: { store.historyLimit }, set: { value in if value < store.historyLimit { proposedHistoryLimit = value } else { Task { await store.changeHistoryLimit(value) } } })) {
                     Text("30").tag(30); Text("100").tag(100); Text("500").tag(500)
                 }.disabled(!store.isLoaded || store.isBusy)
                 Text("Kept versions stay until you stop keeping them. The newest versions include deleted content. Complete library backups stay until you remove them.").font(.caption).foregroundStyle(.secondary)
                 Button("Deleted Templates…") { store.historyRequest = HistoryRequest(itemID: nil) }.disabled(!store.isLoaded)
 
+            }
+            Section("Library Backups") {
+                Button("Open Backup…", action: openBackup).disabled(store.isBusy || store.hasUnsavedChanges)
                 HStack {
                     Button("Back Up Now") { Task { await store.backup() } }.disabled(store.isBusy)
                     Button("Reveal History") { NSWorkspace.shared.open(store.storageURL.deletingLastPathComponent().appending(path: "Quill History")) }
@@ -144,7 +151,7 @@ struct SettingsView: View {
                 Text("Quill does not upload snippets, read the clipboard, or retain keystroke logs. Optional aggregate usage totals stay on this Mac. Authored drafts are checkpointed for recovery; fill-in values and resolved previews are never saved to history. Copy writes only when you choose it.")
             }
             Section("Expansion Permissions") {
-                Text("Expansion starts only after you grant access through the Expansion setup controls and explicitly enable it. Across Launches resumes expansion only after you choose that mode and enable it. Secure input and password fields are excluded.")
+                Text("Expansion starts only after you grant access through the Expansion setup controls and explicitly enable it. Every Time Quill Opens resumes expansion only after you choose that mode and enable it. Secure input and password fields are excluded.")
             }
             Section("Update Connections") {
                 Text("When a signed release feed is configured, checking for updates contacts that feed. Automatic checks are off by default; library content is never sent.")
@@ -168,22 +175,22 @@ struct SettingsView: View {
     private func chooseLocation() {
         let panel = NSOpenPanel(); panel.canChooseFiles = false; panel.canChooseDirectories = true
         panel.prompt = "Use Folder"
-        if panel.runModal() == .OK, let url = panel.url { Task { if store.isLoaded { await store.moveStorage(to: url) } else { await store.openStorage(in: url) } } }
+        Task { if await NativeFilePanel.present(panel) == .OK, let url = panel.url { if store.isLoaded { await store.moveStorage(to: url) } else { await store.openStorage(in: url) } } }
     }
     private func importLibrary() {
         let panel = NSOpenPanel(); panel.allowedContentTypes = [.json]; panel.allowsMultipleSelection = false
-        if panel.runModal() == .OK, let url = panel.url { Task { await store.previewImport(from: url) } }
+        Task { if await NativeFilePanel.present(panel) == .OK, let url = panel.url { await store.previewImport(from: url) } }
     }
     private func openBackup() {
         let panel = NSOpenPanel(); panel.allowsMultipleSelection = false; panel.allowedContentTypes = [QuillFileTypes.libraryBackup, .json]
-        if panel.runModal() == .OK, let url = panel.url { store.backupRequest = LibraryRevision(url: url, date: .now) }
+        Task { if await NativeFilePanel.present(panel) == .OK, let url = panel.url { store.backupRequest = LibraryRevision(url: url, date: .now) } }
     }
     private func exportBackup() {
         let panel = NSSavePanel(); panel.allowedContentTypes = [QuillFileTypes.libraryBackup]; panel.nameFieldStringValue = "Quill Library.quillbackup"
-        if panel.runModal() == .OK, let url = panel.url { Task { await store.exportBackup(to: url) } }
+        Task { if await NativeFilePanel.present(panel) == .OK, let url = panel.url { await store.exportBackup(to: url) } }
     }
     private func exportLibrary() {
         let panel = NSSavePanel(); panel.allowedContentTypes = [.json]; panel.nameFieldStringValue = "Quill Library.json"
-        if panel.runModal() == .OK, let url = panel.url { Task { await store.export(to: url) } }
+        Task { if await NativeFilePanel.present(panel) == .OK, let url = panel.url { await store.export(to: url) } }
     }
 }

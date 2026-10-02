@@ -5,6 +5,7 @@ Research checked 2 October 2026 against official TextExpander sources. Status de
 | Capability | Status | Acceptance criteria / boundary |
 | --- | --- | --- |
 | First-launch setup | Implemented | Shared permission actions, native application scope chooser, explicit Enable, optional resume/login and deferral; completed setup remains dismissed after relaunch |
+| Native workspace refinement | Implemented, acceptance documented | Shared content-sized source/preview, new-item name focus, compact reviews, window-attached file panels and reachable Settings navigation; native walkthrough and limits in UI_UX_AUDIT.md |
 | Command palette | Implemented | Native ⌘K search across snippets/macros/actions, ranked and compact fuzzy matching, group/tag/favorite filters, recents, previews and keyboard copy/open/run |
 | Global abbreviation expansion | Partial, runtime acceptance pending | Consent setup, immediate/delimiter matching, typed expansion forms, application scope and verified AX replacement implemented. Signed installed grants and rebuild continuity confirmed; physical typing, external form transactions, editor coverage and IME acceptance remain open |
 | Plain text library/editor | Implemented | Create/edit/save/delete with confirmation; restart round-trip and error preservation |

@@ -36,3 +36,9 @@ Format lives with each template’s metadata. Markdown shares the source editor 
 The group-management control is right-aligned in the Groups header. Its 12-point symbol sits in a 24-by-20-point target, with 8 points of additional trailing padding.
 
 Expansion Settings offers All Applications or Selected Applications. Selected apps and exclusions use named, icon-bearing rows with native multi-selection, +/− controls, Delete and a Remove Application context menu. The + button opens a native application-only chooser and supports choosing several apps. Adding an app to either list moves it out of the other; removing an exclusion does not implicitly select that app in Selected Applications mode. Empty selected scope pauses active expansion. Secure input and password-field protections apply independently of both lists.
+
+## 0.1.5 layout and presentation
+
+Snippet and macro source sections share their insertion menu, native editor and content-driven measurement. Measurement runs in an independent text system so sizing cannot mutate a live editor during layout. New items request name focus through the shared window-ready lifecycle; ordinary selection does not request focus. Short source/preview content avoids fixed blank regions and long content scrolls within bounds.
+
+Native file panels attach to the requesting window, including an already-present review sheet, without a blocking app-modal loop. Review footers keep secondary dismissal actions on the left and the primary commit on the right. Template History and Library Backups are distinct Settings sections because their recovery scope differs. See [the native audit](UI_UX_AUDIT.md) for observed coverage and limits.

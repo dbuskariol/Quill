@@ -112,3 +112,10 @@ Native checks on the signed installed build exercised permission status, the com
 [Quill 0.1.4](https://github.com/dbuskariol/Quill/releases/tag/v0.1.4) is public, non-prerelease and latest. Annotated tag `v0.1.4` resolves to `46b13da900213f424e18a9f96797589f744f1c10`, matching the clean source in the notarized manifest. GitHub [run 36999270234](https://github.com/dbuskariol/Quill/actions/runs/36999270234) passed on macos-26 and macos-26-intel. The release pipeline passed `/tmp/quill-0.1.4-release.log`; the exact notarized app is installed in Applications. Native inspection confirmed both permissions Granted and expansion enabled in Every Time Quill Opens after replacement without pressing Enable.
 
 All six public assets were downloaded anonymously using fresh latest requests into `/Users/nftdannyboy/Library/Developer/Quill-0.1.4-public-verification-20261002`. Names, sizes and SHA-256 digests were verified in the draft, and each public download exactly matches the local candidate. Checksums and `/tmp/quill-0.1.4-public-verification.log` passed feed/archive/notes Sparkle signatures, expanded ZIP comparison, nested Developer ID signatures and notarized Gatekeeper assessment. Actual updater installation and rollback are separate acceptance work.
+
+
+## 0.1.5 native UI refinement — 2026-10-02
+
+The [native audit](UI_UX_AUDIT.md) records source and Computer Use coverage across workspace editors, setup, all six Settings pages, completion, Quick Actions, groups, history, recovery, import and backup review. Disposable libraries protected the personal library. The walkthrough exposed and fixed a live text-container layout exception, missing Statistics reset confirmation and custom-placeholder Return submission. Real native captures were refreshed. External directed typing and menu-bar automation limits are stated explicitly in the audit.
+
+`/tmp/quill-0.1.5-final-polish-gate.log` passed 96 tests across 15 suites with a verified nonzero xcresult count and a universal arm64/x86_64 Release build. The native layout regressions pass. Script, metadata and whitespace checks passed.

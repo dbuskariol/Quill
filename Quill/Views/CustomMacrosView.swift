@@ -7,6 +7,7 @@ struct CustomMacrosView: View {
     @State private var pendingDelete = false
     @State private var showZendesk = false
     @State private var templateEditor = TemplateEditorController()
+    @FocusState private var nameFocused: Bool
     private var items: [CustomMacro] {
         var items = store.library.macros.map { store.macroDrafts[$0.id] ?? $0 }
         items += store.macroDrafts.values.filter { draft in !items.contains { $0.id == draft.id } }
@@ -30,9 +31,10 @@ struct CustomMacrosView: View {
             List(selection: $store.selectedMacroID) {
                 ForEach(visible) { item in
                     HStack {
-                        Text(item.name)
+                        Text(item.name).fontWeight(.medium).lineLimit(1)
                         if store.macroDrafts[item.id] != nil { Image(systemName: "circle.fill").font(.system(size: 5)).accessibilityLabel("Unsaved changes") }
                     }.padding(.vertical, 5).tag(item.id)
+                        .contextMenu { Button("Delete…", role: .destructive) { store.selectedMacroID = item.id; pendingDelete = true }.disabled(store.macroDrafts[item.id] != nil) }
                 }
             }
             .overlay {
@@ -57,6 +59,7 @@ struct CustomMacrosView: View {
         .navigationSplitViewStyle(.balanced)
         .searchable(text: $store.macroSearch, prompt: "Search custom macros")
         .toolbar {
+            ToolbarItem { Button { store.showQuickActions = true } label: { Label("Quick Actions", systemImage: "command") }.help("Quick Actions (⌘K)").disabled(!store.isLoaded || store.isBusy) }
             ToolbarItem { Button { store.createMacro() } label: { Label("New Macro", systemImage: "plus") }.help("New Macro (⌘N)").disabled(store.isBusy || !store.isLoaded) }
         }
         .onAppear {
@@ -66,6 +69,7 @@ struct CustomMacrosView: View {
         .onChange(of: store.selectedMacroID) { _, _ in selectDraft() }
         .onChange(of: store.macroSearch) { _, _ in if !visible.contains(where: { $0.id == store.selectedMacroID }) { store.selectedMacroID = visible.first?.id } }
         .onChange(of: store.macroDrafts) { _, values in if let id = store.selectedMacroID, let value = values[id], value != draft { draft = value } }
+        .onChange(of: items.map(\.id)) { _, ids in if !ids.contains(store.selectedMacroID ?? UUID()) { store.selectedMacroID = ids.first } }
         .onChange(of: store.library.macros) { _, values in if let id = store.selectedMacroID, store.macroDrafts[id] == nil { draft = values.first { $0.id == id } } }
         .onChange(of: draft) { _, value in
             guard let value else { return }
@@ -82,18 +86,28 @@ struct CustomMacrosView: View {
     private var editor: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 20) {
-                TextField("Macro name", text: Binding(get: { draft?.name ?? "" }, set: { draft?.name = $0 })).textFieldStyle(.roundedBorder).accessibilityLabel("Macro name")
-                Picker("Format", selection: Binding(get: { draft?.format ?? .plainText }, set: { draft?.format = $0 })) { ForEach(ContentFormat.allCases) { Text($0.label).tag($0) } }
-                Text("{{macro:\(draft?.name ?? "")}}").id(draft?.name).font(.system(.caption, design: .monospaced)).textSelection(.enabled)
-                HStack {
-                    Text("Template").font(.headline)
-                    Spacer()
-                    TemplateInsertionMenu(library: store.library, excludingMacro: draft?.id, insert: templateEditor.insert, showZendesk: { showZendesk = true })
-                }
-                TemplateEditor(text: Binding(get: { draft?.body ?? "" }, set: { draft?.body = $0 }), library: store.library, controller: templateEditor, excludingMacro: draft?.id, accessibilityName: "Custom macro template")
-                    .id(draft?.id).frame(height: 220)
+                Grid(alignment: .leading, horizontalSpacing: 16, verticalSpacing: 12) {
+                    GridRow {
+                        Text("Name")
+                        TextField("Macro name", text: Binding(get: { draft?.name ?? "" }, set: { draft?.name = $0 })).accessibilityLabel("Macro name")
+                            .focused($nameFocused)
+                            .background(InputFocusOnPresentation(enabled: store.nameFocusRequest != nil && store.nameFocusRequest == draft?.id) {
+                                nameFocused = true
+                                store.nameFocusRequest = nil
+                            }.id(draft?.id))
+                    }
+                    GridRow {
+                        Text("Format")
+                        Picker("Content format", selection: Binding(get: { draft?.format ?? .plainText }, set: { draft?.format = $0 })) { ForEach(ContentFormat.allCases) { Text($0.label).tag($0) } }.labelsHidden()
+                    }
+                    GridRow {
+                        Text("Insert as")
+                        Text("{{macro:\(draft?.name ?? "")}}").id(draft?.name).font(.system(.caption, design: .monospaced)).textSelection(.enabled)
+                    }
+                }.textFieldStyle(.roundedBorder)
+                TemplateSourceSection(text: Binding(get: { draft?.body ?? "" }, set: { draft?.body = $0 }), library: store.library, controller: templateEditor, excludingMacro: draft?.id, accessibilityName: "Custom macro template", showZendesk: { showZendesk = true }).id(draft?.id)
                 PreviewView(result: preview, fields: $fields, actions: store.quickActions)
-            }.padding(24)
+            }.padding(20)
         }
         .safeAreaInset(edge: .bottom) {
             VStack(spacing: 0) {
@@ -113,7 +127,7 @@ struct CustomMacrosView: View {
                     Button("Save Macro") {
                         if let draft { Task { if await store.saveMacro(draft) { self.draft = store.library.macros.first { $0.id == draft.id } } } }
                     }.keyboardShortcut("s").buttonStyle(.borderedProminent).disabled(!changed || store.isBusy || (try? preview.get()) == nil)
-                }.padding(.horizontal, 24).padding(.vertical, 12)
+                }.padding(.horizontal, 20).padding(.vertical, 12)
             }.background(.bar)
         }.disabled(store.isBusy)
     }

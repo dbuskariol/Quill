@@ -8,6 +8,7 @@ final class LibraryStore {
     private(set) var isLoaded = false
     var errorMessage: String?
     var selectedID: UUID?
+    var nameFocusRequest: UUID?
     var filter = "all"
     var search = ""
     var pendingDelete: Snippet?
@@ -102,6 +103,7 @@ final class LibraryStore {
         destination = .macros
         macroSearch = ""
         selectedMacroID = macro.id
+        nameFocusRequest = macro.id
     }
 
     func create() async {
@@ -112,6 +114,7 @@ final class LibraryStore {
             search = ""
             if filter == "favorites" { filter = "all" }
             selectedID = item.id
+            nameFocusRequest = item.id
         }
     }
 
