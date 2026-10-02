@@ -130,9 +130,7 @@ private struct ExpansionForm: View {
     }
     private var isReady: Bool {
         guard let value = try? result.get() else { return false }
-        return value.fields.allSatisfy { name in
-            !(value.fieldDefinitions.first { $0.name == name }?.isRequired ?? true) || !fields[name, default: ""].isEmpty
-        }
+        return value.canSubmit(fields: fields)
     }
 }
 

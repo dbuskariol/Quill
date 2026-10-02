@@ -36,7 +36,18 @@ struct WorkspaceView: View {
         .sheet(item: $store.historyRequest) { request in TemplateHistoryView(store: store, itemID: request.itemID) }
         .sheet(isPresented: $store.showDraftRecovery) { DraftRecoveryView(store: store) }
         .frame(minWidth: 940, minHeight: 580)
-        .sheet(isPresented: $store.showQuickActions) { CommandPaletteView(store: store) }
+        .sheet(isPresented: $store.showQuickActions, onDismiss: {
+            let next = store.paletteSheet
+            store.paletteSheet = nil
+            switch next {
+            case .setup: store.showOnboarding = true
+            case .textExpanderImport: store.showTextExpanderImport = true
+            case nil: break
+            }
+        }) { CommandPaletteView(store: store, expansion: expansion) }
+        .sheet(isPresented: $store.showOnboarding) {
+            if let expansion { OnboardingView(preferences: preferences, expansion: expansion) }
+        }
         .sheet(isPresented: $store.showTextExpanderImport) { TextExpanderImportView(store: store) }
         .alert("Delete Snippet?", isPresented: Binding(get: { store.pendingDelete != nil }, set: { if !$0 { store.pendingDelete = nil } }), presenting: store.pendingDelete) { item in
             Button("Cancel", role: .cancel) { store.pendingDelete = nil }

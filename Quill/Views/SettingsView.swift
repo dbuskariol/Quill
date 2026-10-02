@@ -67,6 +67,7 @@ struct SettingsView: View {
     }
     private var general: some View {
         Group {
+            Section { Button("Set Up Quill…") { store.showOnboarding = true }.disabled(expansion == nil) }
             Section {
                 Toggle("Show Quill in the menu bar", isOn: $preferences.showMenuBar)
                     .disabled(!preferences.showDock).help("Keep the Dock or menu bar entry available.")

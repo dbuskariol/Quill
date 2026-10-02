@@ -45,7 +45,13 @@ struct QuillApp: App {
             WorkspaceView(store: store, preferences: preferences, updates: updates, expansion: expansion)
                 .background(MenuBarLifecycleView(controller: menuBar, store: store, preferences: preferences, expansion: expansion))
                 .onAppear { delegate.store = store; delegate.preferences = preferences; preferences.applyActivationPolicy() }
-                .task { await store.load(); if expansion == nil { expansion = ExpansionController(store: store) } }
+                .task {
+                    await store.load()
+                    if expansion == nil { expansion = ExpansionController(store: store) }
+                    if store.isLoaded, !QuillLaunchConfiguration.isTesting, preferences.setupDisposition.shouldPresentAutomatically {
+                        store.showOnboarding = true
+                    }
+                }
         }
         .defaultSize(width: 1120, height: 740)
         .commands { LibraryCommands(store: store) }
@@ -54,6 +60,10 @@ struct QuillApp: App {
 }
 
 private enum QuillLaunchConfiguration {
+    static var isTesting: Bool {
+        let environment = ProcessInfo.processInfo.environment
+        return environment["XCTestConfigurationFilePath"] != nil || environment["XCTestBundlePath"] != nil
+    }
     static let libraryURL: URL = {
         let environment = ProcessInfo.processInfo.environment
         if environment["XCTestConfigurationFilePath"] != nil || environment["XCTestBundlePath"] != nil {

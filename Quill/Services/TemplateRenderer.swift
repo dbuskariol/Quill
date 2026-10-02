@@ -21,6 +21,12 @@ struct RenderResult: Equatable, Sendable {
     var zendeskPlaceholders: [String] = []
     var format: ContentFormat = .plainText
 
+    func canSubmit(fields values: [String: String]) -> Bool {
+        fields.allSatisfy { name in
+            !(fieldDefinitions.first { $0.name == name }?.isRequired ?? true) || !values[name, default: ""].isEmpty
+        }
+    }
+
     func plainTextResult() throws -> RenderResult {
         guard format == .markdown else { return self }
         let document = try MarkdownDocument(text)
@@ -38,6 +44,10 @@ enum TemplateError: LocalizedError, Equatable {
 }
 
 enum TemplateRenderer {
+    static func render(_ macro: CustomMacro, library: Library, context: RenderContext = .init()) throws -> RenderResult {
+        try render(Snippet(id: macro.id, groupID: itemGroupID(library), title: macro.name, abbreviation: "", body: macro.body, format: macro.format), library: library, context: context)
+    }
+
     static func parse(_ source: String) throws -> [TemplateToken] {
         guard source.utf16.count <= 1_000_000 else { throw TemplateError.invalid("Template exceeds the safety limit.") }
         var remainder = source[...]

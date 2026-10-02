@@ -5,6 +5,8 @@ struct PreviewView: View {
     let result: Result<RenderResult, Error>
     @Binding var fields: [String: String]
     let actions: QuickActionStore
+    var focusFieldsInitially = false
+    var showsCopyActions = true
     @State private var copied = false
     @State private var copyAttempted = false
     var body: some View {
@@ -12,7 +14,7 @@ struct PreviewView: View {
             HStack {
                 Label("Preview", systemImage: "play.rectangle").font(.headline)
                 Spacer()
-                if case let .success(preview) = result {
+                if case let .success(preview) = result, showsCopyActions {
                     Button(copied ? "Copied" : preview.format == .markdown ? "Copy Formatted" : "Copy Preview") {
                         copyAttempted = true
                         copied = actions.copy(preview)
@@ -32,7 +34,7 @@ struct PreviewView: View {
                     Label("Zendesk fills these placeholders when it processes your comment. Quill copies them unchanged.", systemImage: "curlybraces")
                         .font(.callout).foregroundStyle(.secondary)
                 }
-                TemplateFieldsView(result: preview, fields: $fields)
+                TemplateFieldsView(result: preview, fields: $fields, focusInitially: focusFieldsInitially)
                 if preview.format == .markdown {
                     if let document = try? MarkdownDocument(preview.text) {
                         FormattedPreview(document: document).frame(height: 200)

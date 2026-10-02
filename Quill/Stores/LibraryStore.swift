@@ -13,6 +13,9 @@ final class LibraryStore {
     var pendingDelete: Snippet?
     var drafts: [UUID: Snippet] = [:] { didSet { scheduleCheckpoint() } }
     var showQuickActions = false
+    var showOnboarding = false
+    enum PaletteSheet { case setup, textExpanderImport }
+    var paletteSheet: PaletteSheet?
     var requestedSettingsPage: SettingsPage?
     enum Destination { case snippets, macros, settings }
     var destination: Destination = .snippets

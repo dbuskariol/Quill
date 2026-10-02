@@ -20,16 +20,7 @@ struct ExpansionSettingsView: View {
             Text("Type a saved abbreviation in an application you allow. Templates with fill-ins open a form before insertion.").font(.caption).foregroundStyle(.secondary)
         }
         Section("Permission Setup") {
-            LabeledContent("Accessibility", value: expansion.accessibilityGranted ? "Granted" : "Not granted")
-            Button("Set Up Accessibility…") { expansion.requestAccessibility() }.disabled(expansion.accessibilityGranted)
-            LabeledContent("Input Monitoring", value: expansion.inputGranted ? "Granted" : "Not granted")
-            Button("Set Up Input Monitoring…") { expansion.requestInputMonitoring() }.disabled(expansion.inputGranted)
-            if !expansion.inputGranted {
-                Text("If Quill isn’t listed in Input Monitoring, click + and choose Quill in Applications. Reopen Quill if macOS asks.").font(.caption).foregroundStyle(.secondary)
-                Button("Show Quill in Finder") { NSWorkspace.shared.activateFileViewerSelecting([Bundle.main.bundleURL]) }
-            }
-            Button("Refresh Permission Status") { expansion.refreshPermissions() }
-            Text("These permissions let Quill detect abbreviations and replace text in allowed apps. Password fields and secure input are excluded; keystrokes are not recorded.").font(.caption).foregroundStyle(.secondary)
+            ExpansionPermissionControls(expansion: expansion)
         }
         Section("Matching") {
             Picker("Expand abbreviations", selection: $expansion.policy.trigger) {
@@ -79,10 +70,11 @@ struct ExpansionSettingsView: View {
     }
 }
 
-private struct ExpansionApplicationList: View {
+struct ExpansionApplicationList: View {
     let applications: [ExpansionApplication]
     let emptyMessage: String
     let addLabel: String
+    var compact = false
     let add: ([ExpansionApplication]) -> Void
     let remove: (Set<String>) -> Void
     @State private var selection: Set<String> = []
@@ -100,7 +92,7 @@ private struct ExpansionApplicationList: View {
             }
             .onDeleteCommand(perform: removeSelected)
             .listStyle(.inset)
-            .frame(height: 140)
+            .frame(height: compact ? min(140, max(60, CGFloat(applications.count) * 36)) : 140)
             .overlay {
                 if applications.isEmpty {
                     Text(emptyMessage).foregroundStyle(.secondary)
@@ -157,7 +149,7 @@ private struct ExpansionApplicationList: View {
     }
 }
 
-private struct ExpansionApplicationRow: View {
+struct ExpansionApplicationRow: View {
     let application: ExpansionApplication
     private var url: URL? {
         if let installed = NSWorkspace.shared.urlForApplication(withBundleIdentifier: application.id) { return installed }

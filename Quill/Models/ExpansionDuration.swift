@@ -6,7 +6,7 @@ enum ExpansionDuration: String, CaseIterable, Identifiable, Sendable {
     var title: String {
         switch self {
         case .untilQuit: "Until Quill Quits"
-        case .always: "Across Launches"
+        case .always: "Every Time Quill Opens"
         case .fifteenMinutes: "15 Minutes"
         case .oneHour: "1 Hour"
         }
