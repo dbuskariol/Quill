@@ -33,7 +33,7 @@ struct CommandPaletteView: View {
                     if let selected {
                         PreviewView(result: Result { try TemplateRenderer.render(selected, library: store.library, context: RenderContext(date: contextDate, fields: fields)) }, fields: $fields, actions: store.quickActions)
                         Button("Open in Library") {
-                            store.isShowingSettings = false; store.filter = "all"; store.search = ""; store.selectedID = selected.id; dismiss()
+                            store.destination = .snippets; store.filter = "all"; store.search = ""; store.selectedID = selected.id; dismiss()
                         }
                     } else { ContentUnavailableView("Choose a Snippet", systemImage: "text.quote") }
                 }.frame(minWidth: 340)

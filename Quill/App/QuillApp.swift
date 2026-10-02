@@ -53,7 +53,7 @@ private struct MenuBarView: View {
     @Environment(\.openWindow) private var openWindow
     var body: some View {
         Button("Open Quill Library") {
-            store.isShowingSettings = false
+            store.destination = .snippets
             showQuillWorkspace(openWindow: openWindow)
         }
         Button("Settings…") {

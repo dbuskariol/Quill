@@ -14,12 +14,12 @@ struct WorkspaceView: View {
                 } detail: {
                     SettingsView(preferences: preferences, store: store, updates: updates, expansion: expansion)
                 }.navigationSplitViewStyle(.balanced)
-            } else { LibraryView(store: store) }
+            } else if store.showCustomMacros { CustomMacrosView(store: store) }
+            else { LibraryView(store: store) }
         }
         .frame(minWidth: 940, minHeight: 580)
         .sheet(isPresented: $store.showQuickActions) { CommandPaletteView(store: store) }
         .sheet(isPresented: $store.showTextExpanderImport) { TextExpanderImportView(store: store) }
-        .sheet(isPresented: $store.showCustomMacros) { CustomMacrosView(store: store) }
         .alert("Delete Snippet?", isPresented: Binding(get: { store.pendingDelete != nil }, set: { if !$0 { store.pendingDelete = nil } }), presenting: store.pendingDelete) { item in
             Button("Cancel", role: .cancel) { store.pendingDelete = nil }
             Button("Delete", role: .destructive) { store.pendingDelete = nil; Task { await store.delete(item) } }

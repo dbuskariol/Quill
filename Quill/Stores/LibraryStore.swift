@@ -13,9 +13,19 @@ final class LibraryStore {
     var pendingDelete: Snippet?
     var drafts: [UUID: Snippet] = [:]
     var showQuickActions = false
-    var isShowingSettings = false
+    enum Destination { case snippets, macros, settings }
+    var destination: Destination = .snippets
+    var isShowingSettings: Bool {
+        get { destination == .settings }
+        set { if newValue { destination = .settings } else if destination == .settings { destination = .snippets } }
+    }
     var showTextExpanderImport = false
-    var showCustomMacros = false
+    var showCustomMacros: Bool {
+        get { destination == .macros }
+        set { if newValue { destination = .macros } else if destination == .macros { destination = .snippets } }
+    }
+    var selectedMacroID: UUID?
+    var macroSearch = ""
     var macroDrafts: [UUID: CustomMacro] = [:]
     var hasUnsavedChanges: Bool { !drafts.isEmpty || !macroDrafts.isEmpty }
     let statistics = LocalStatistics()
@@ -67,8 +77,20 @@ final class LibraryStore {
         return success
     }
 
+    func createMacro() {
+        guard isLoaded, !isBusy else { return }
+        let names = Set(library.macros.map(\.name) + macroDrafts.values.map(\.name))
+        var name = "New macro"; var suffix = 2
+        while names.contains(name) { name = "New macro \(suffix)"; suffix += 1 }
+        let macro = CustomMacro(name: name, body: "")
+        macroDrafts[macro.id] = macro
+        destination = .macros
+        macroSearch = ""
+        selectedMacroID = macro.id
+    }
+
     func create() async {
-        isShowingSettings = false
+        destination = .snippets
         guard let group = library.groups.first(where: { $0.id.uuidString == filter }) ?? library.groups.first else { return }
         let item = Snippet(groupID: group.id, title: "Untitled snippet", abbreviation: "", body: "")
         if await save(item) {
