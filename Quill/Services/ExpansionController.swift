@@ -87,7 +87,7 @@ import Observation
                   self.policy.allows(bundleID), self.isDirectKeyboardLayout(),
                   let target = AccessibilityTextTarget.capture(pid: pid), CFEqual(target.element, originalFocus),
                   let match = AbbreviationMatcher.match(text: target.text, caret: target.selection.location, library: self.store.library, policy: self.policy),
-                  let snippet = self.store.library.snippets.first(where: { $0.id == match.snippetID }) else { return }
+                  let snippet = self.store.library.snippets.first(where: { $0.id == match.snippetID }), snippet.format == .plainText else { return }
             do {
                 let rendered = try TemplateRenderer.render(snippet, library: self.store.library)
                 try target.replace(match, with: rendered)

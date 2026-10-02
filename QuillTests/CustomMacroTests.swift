@@ -15,7 +15,7 @@ struct CustomMacroTests {
         #expect(text == "Hi {{ticket.id}}! friend")
         let directory = FileManager.default.temporaryDirectory.appending(path: UUID().uuidString)
         defer { try? FileManager.default.removeItem(at: directory) }
-        let store = LibraryStore(repository: LibraryRepository(url: directory.appending(path: "library.json")))
+        let store = LibraryStore(repository: LibraryRepository(url: directory.appending(path: "library.sqlite")))
         await store.load()
         var macro = CustomMacro(name: "old", body: "Hello")
         #expect(await store.saveMacro(macro))
@@ -27,14 +27,12 @@ struct CustomMacroTests {
         #expect(store.library.snippets[0].body == "{{macro:new}}")
         #expect(try TemplateRenderer.render(store.library.snippets[0], library: store.library).text == "Hello")
     }
-    @Test func oldLibrariesDecodeAndCustomMacrosRoundTrip() throws {
-        let legacy = Data(#"{"version":1,"groups":[],"snippets":[]}"#.utf8)
-        let library = try JSONDecoder().decode(Library.self, from: legacy)
-        #expect(library.macros.isEmpty)
-        var updated = library
-        updated.macros = [CustomMacro(name: "signature", body: "Daniel")]
-        #expect(updated.version == 2)
-        #expect(try JSONDecoder().decode(Library.self, from: LibraryRepository.encode(updated)) == updated)
+    @Test func currentLibrariesRequireCompleteDefinitionsAndMacrosRoundTrip() throws {
+        let incomplete = Data(#"{"version":3,"groups":[],"snippets":[]}"#.utf8)
+        #expect(throws: LibraryError.self) { try LibraryRepository.decode(incomplete) }
+        let library = Library(groups: [], snippets: [], macros: [CustomMacro(name: "signature", body: "Daniel")])
+        #expect(library.version == Library.schemaVersion)
+        #expect(try LibraryRepository.decode(LibraryRepository.encode(library)) == library)
     }
     @Test func reusableMacrosShareFieldsAndPreserveZendeskTokens() throws {
         let group = SnippetGroup(name: "Support")
@@ -72,7 +70,7 @@ struct CustomMacroTests {
     @Test @MainActor func macroSaveRejectsCyclesPersistsAndProtectsDrafts() async throws {
         let directory = FileManager.default.temporaryDirectory.appending(path: UUID().uuidString)
         defer { try? FileManager.default.removeItem(at: directory) }
-        let repository = LibraryRepository(url: directory.appending(path: "library.json"))
+        let repository = LibraryRepository(url: directory.appending(path: "library.sqlite"))
         let store = LibraryStore(repository: repository)
         await store.load()
         let macro = CustomMacro(name: "signature", body: "Daniel")

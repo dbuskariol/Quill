@@ -20,7 +20,7 @@ struct CustomMacrosView: View {
             var library = store.library
             library.macros.removeAll { $0.id == draft.id }; library.macros.append(draft)
             try library.validate()
-            return try TemplateRenderer.render(Snippet(groupID: library.groups.first?.id ?? UUID(), title: draft.name, abbreviation: "", body: "{{macro:\(draft.name)}}"), library: library, context: RenderContext(fields: fields))
+            return try TemplateRenderer.render(Snippet(groupID: library.groups.first?.id ?? UUID(), title: draft.name, abbreviation: "", body: "{{macro:\(draft.name)}}", format: draft.format), library: library, context: RenderContext(fields: fields))
         }
     }
     var body: some View {
@@ -65,6 +65,8 @@ struct CustomMacrosView: View {
         }
         .onChange(of: store.selectedMacroID) { _, _ in selectDraft() }
         .onChange(of: store.macroSearch) { _, _ in if !visible.contains(where: { $0.id == store.selectedMacroID }) { store.selectedMacroID = visible.first?.id } }
+        .onChange(of: store.macroDrafts) { _, values in if let id = store.selectedMacroID, let value = values[id], value != draft { draft = value } }
+        .onChange(of: store.library.macros) { _, values in if let id = store.selectedMacroID, store.macroDrafts[id] == nil { draft = values.first { $0.id == id } } }
         .onChange(of: draft) { _, value in
             guard let value else { return }
             store.macroDrafts[value.id] = store.library.macros.contains(value) ? nil : value
@@ -81,6 +83,7 @@ struct CustomMacrosView: View {
         ScrollView {
             VStack(alignment: .leading, spacing: 20) {
                 TextField("Macro name", text: Binding(get: { draft?.name ?? "" }, set: { draft?.name = $0 })).textFieldStyle(.roundedBorder).accessibilityLabel("Macro name")
+                Picker("Format", selection: Binding(get: { draft?.format ?? .plainText }, set: { draft?.format = $0 })) { ForEach(ContentFormat.allCases) { Text($0.label).tag($0) } }
                 Text("{{macro:\(draft?.name ?? "")}}").id(draft?.name).font(.system(.caption, design: .monospaced)).textSelection(.enabled)
                 HStack {
                     Text("Template").font(.headline)
@@ -96,6 +99,7 @@ struct CustomMacrosView: View {
             VStack(spacing: 0) {
                 Divider()
                 HStack {
+                    Button("History", systemImage: "clock.arrow.circlepath") { store.historyRequest = HistoryRequest(itemID: draft?.id) }
                     Button("Delete…", role: .destructive) { pendingDelete = true }.disabled(changed || store.isBusy)
                     if changed { Text("Unsaved changes").font(.caption).foregroundStyle(.secondary) }
                     Spacer()

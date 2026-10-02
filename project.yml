@@ -21,6 +21,7 @@ targets:
     sources: [Quill]
     dependencies:
       - package: Sparkle
+      - sdk: libsqlite3.tbd
     settings:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: com.dbuskariol.quill

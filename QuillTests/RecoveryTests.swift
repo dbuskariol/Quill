@@ -6,7 +6,7 @@ struct RecoveryTests {
     @Test func revisionRestorePreservesCorruptBytes() async throws {
         let directory = FileManager.default.temporaryDirectory.appending(path: UUID().uuidString)
         defer { try? FileManager.default.removeItem(at: directory) }
-        let url = directory.appending(path: "library.json")
+        let url = directory.appending(path: "library.sqlite")
         let repository = LibraryRepository(url: url)
         let original = try await repository.load()
         let backup = try await repository.backup()
@@ -21,7 +21,7 @@ struct RecoveryTests {
     @Test func externalChangeBlocksSave() async throws {
         let directory = FileManager.default.temporaryDirectory.appending(path: UUID().uuidString)
         defer { try? FileManager.default.removeItem(at: directory) }
-        let url = directory.appending(path: "library.json")
+        let url = directory.appending(path: "library.sqlite")
         let first = LibraryRepository(url: url)
         var library = try await first.load()
         let second = LibraryRepository(url: url)
@@ -36,7 +36,7 @@ struct RecoveryTests {
     @Test @MainActor func importAndUndoPreserveSavedLibrary() async throws {
         let directory = FileManager.default.temporaryDirectory.appending(path: UUID().uuidString)
         defer { try? FileManager.default.removeItem(at: directory) }
-        let store = LibraryStore(repository: LibraryRepository(url: directory.appending(path: "library.json")))
+        let store = LibraryStore(repository: LibraryRepository(url: directory.appending(path: "library.sqlite")))
         await store.load()
         let original = store.library
         var imported = original
@@ -45,7 +45,8 @@ struct RecoveryTests {
         try LibraryRepository.encode(imported).write(to: source)
         await store.previewImport(from: source)
         #expect(store.library == original)
-        await store.applyImport()
+        store.pendingImport = nil // Native alert dismisses before its asynchronous action runs.
+        await store.applyImport(imported)
         #expect(store.library == imported)
         #expect(!store.revisions.isEmpty)
         await store.undoLastLibraryChange()
@@ -55,7 +56,7 @@ struct RecoveryTests {
     @Test @MainActor func groupDeleteMovesSnippetsWithoutDataLoss() async throws {
         let directory = FileManager.default.temporaryDirectory.appending(path: UUID().uuidString)
         defer { try? FileManager.default.removeItem(at: directory) }
-        let store = LibraryStore(repository: LibraryRepository(url: directory.appending(path: "library.json")))
+        let store = LibraryStore(repository: LibraryRepository(url: directory.appending(path: "library.sqlite")))
         await store.load()
         let before = store.library.snippets
         let group = store.library.groups[0].id
@@ -69,20 +70,19 @@ struct RecoveryTests {
     @Test func aggregateExportCannotReplaceActiveLibraryThroughSymlink() async throws {
         let directory = FileManager.default.temporaryDirectory.appending(path: UUID().uuidString)
         defer { try? FileManager.default.removeItem(at: directory) }
-        let url = directory.appending(path: "library.json")
+        let url = directory.appending(path: "library.sqlite")
         let repository = LibraryRepository(url: url)
         let original = try await repository.load()
         let alias = directory.appending(path: "alias.json")
         try FileManager.default.createSymbolicLink(at: alias, withDestinationURL: url)
         await #expect(throws: LibraryError.self) { try await repository.exportData(Data("{}".utf8), to: alias) }
-        await #expect(throws: LibraryError.self) { try await repository.saveNew(.starter) }
         #expect(try await repository.load() == original)
     }
 
     @Test func concurrentRepositoriesCannotBothPublishStaleWrites() async throws {
         let directory = FileManager.default.temporaryDirectory.appending(path: UUID().uuidString)
         defer { try? FileManager.default.removeItem(at: directory) }
-        let url = directory.appending(path: "library.json")
+        let url = directory.appending(path: "library.sqlite")
         let first = LibraryRepository(url: url)
         let second = LibraryRepository(url: url)
         var a = try await first.load()

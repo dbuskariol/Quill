@@ -14,13 +14,19 @@ import SwiftUI
     }
 
     func applicationShouldTerminate(_ sender: NSApplication) -> NSApplication.TerminateReply {
-        guard let store, store.hasUnsavedChanges else { return .terminateNow }
-        let alert = NSAlert()
-        alert.messageText = "Discard Unsaved Changes?"
-        alert.informativeText = "Save your edited snippets and custom macros before quitting to keep your changes."
-        alert.addButton(withTitle: "Keep Editing")
-        alert.addButton(withTitle: "Discard and Quit")
-        return alert.runModal() == .alertSecondButtonReturn ? .terminateNow : .terminateCancel
+        guard let store, store.isLoaded else { return .terminateNow }
+        Task {
+            if await store.flushDrafts() { NSApp.reply(toApplicationShouldTerminate: true) }
+            else {
+                let alert = NSAlert()
+                alert.messageText = "Draft Recovery Could Not Be Saved"
+                alert.informativeText = "Keep editing to save your changes or repair storage access before quitting. Quitting now may lose recent edits."
+                alert.addButton(withTitle: "Keep Editing")
+                alert.addButton(withTitle: "Quit Anyway")
+                NSApp.reply(toApplicationShouldTerminate: alert.runModal() == .alertSecondButtonReturn)
+            }
+        }
+        return .terminateLater
     }
 }
 
@@ -28,7 +34,7 @@ import SwiftUI
 struct QuillApp: App {
     @NSApplicationDelegateAdaptor(AppDelegate.self) private var delegate
     @State private var store = LibraryStore(repository: LibraryRepository(url:
-        UserDefaults.standard.string(forKey: "libraryPath").map { URL(fileURLWithPath: $0) } ?? LibraryRepository.defaultURL))
+        QuillLaunchConfiguration.libraryURL))
     @State private var preferences = AppPreferences()
     @State private var updates = SoftwareUpdateController()
     @State private var expansion: ExpansionController?
@@ -57,7 +63,7 @@ private struct MenuBarView: View {
             showQuillWorkspace(openWindow: openWindow)
         }
         Button("Settings…") {
-            store.isShowingSettings = true
+            store.destination = .settings
             showQuillWorkspace(openWindow: openWindow)
         }
         Divider()
@@ -69,4 +75,14 @@ private struct MenuBarView: View {
         Divider()
         Button("Quit Quill") { NSApp.terminate(nil) }.keyboardShortcut("q")
     }
+}
+
+private enum QuillLaunchConfiguration {
+    static let libraryURL: URL = {
+        let environment = ProcessInfo.processInfo.environment
+        if environment["XCTestConfigurationFilePath"] != nil || environment["XCTestBundlePath"] != nil {
+            return FileManager.default.temporaryDirectory.appending(path: "Quill-TestHost-\(UUID())/library.sqlite")
+        }
+        return UserDefaults.standard.string(forKey: "libraryPath").map { URL(fileURLWithPath: $0) } ?? LibraryRepository.defaultURL
+    }()
 }

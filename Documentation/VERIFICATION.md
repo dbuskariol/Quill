@@ -9,7 +9,7 @@
 
 Coverage includes the original deterministic renderer/persistence tests, typed input/conditional/date/math validation, corruption preservation and recovery, stale/concurrent writer refusal, protected export paths, group reassignment, history/undo, updater configuration guards, matching policy and Unicode UTF-16 boundaries, aggregate statistics consent/reset, CSV and legacy TextExpander migration, conflict handling, nested migration references/cycles, custom macro persistence/rename/cycles/drafts, Zendesk token/filter/escape preservation and Unicode-aware insertion at the editor selection.
 
-Libraries containing custom macros use schema v2, preserving older v1 read compatibility while preventing an older v1-only Quill build from silently stripping saved macros.
+Current JSON schema v3 requires explicit formats and a macros collection. Old Quill schemas and incomplete definitions are rejected; automatic JSON migration and navigation compatibility aliases were removed at the user’s request.
 
 ## Observed native UI
 
@@ -32,3 +32,17 @@ Development-location login registration reports unavailable; installed-bundle lo
 Full keyboard traversal, Light appearance, increased contrast, reduced motion, compact/extreme resizing, spoken VoiceOver and real user-owned TextExpander export variants remain acceptance work. Prepared GitHub CI has not run because no remote is configured. Test-host linkd autoShortcut diagnostics and skipped AppIntents extraction are host messages; the verification gate had no failing tests or remaining Swift compiler errors.
 
 Broader product work is tracked honestly in FEATURE_MATRIX.md and COLLABORATION_ROADMAP.md; this development milestone does not establish full TextExpander parity or release readiness.
+
+## Native content and history milestone — 2 October 2026
+
+`script/verify-ci.sh` passed with **76 Swift Testing tests in 11 suites** and a universal unsigned Release build containing arm64/x86_64. The normal ad-hoc Debug build was rebuilt separately without terminating the user's original app. Current-schema JSON rejects missing/outdated fields with a readable path. Active storage is SQLite only; there are no runtime JSON migration paths, inferred content formats, automatic JSON archives or navigation compatibility aliases.
+
+Added coverage verifies linked/no-op per-item saves, SQL-trigger rollback, deletion/restore-as-new, protected retention, altered revision digest refusal, complete portable backup/disaster recovery, healthy restore retaining newer versions, exclusive full-database copying, authored draft checkpoints/restart/save/discard, original edit-base detection, metadata/body line diffs and favorite commands preserving unsaved bodies. Markdown coverage includes native styles/RTF, safe HTML, links/lists/fences, literal fields and entities, Zendesk tokens, mixed-format references and exact multi-format Repeat Last Copy on an owned test pasteboard. No user clipboard read or write was performed.
+
+A separate QA bundle and temporary current-schema SQLite library verified embedded Settings, explicit JSON import confirmation, native Markdown preview with Zendesk placeholders, saving a new version, native History comparison, keeping an older version and restoring it as a new save. Quit/relaunch displayed the recovery banner, native draft comparison and Recover Draft; saved content remained unchanged until Save. Revert cleared the recovered draft. Back Up Now created a complete backup, and its native review displayed saved snippet/macro contents before confirmation. The final retention confirmation and history dates include explicit actions and second precision; manual full VoiceOver/high-contrast acceptance remains open.
+
+Native QA exposed a confirmation lifetime bug: the pending JSON import was cleared on alert dismissal before its async action read it. The action now receives the captured reviewed library directly, with a regression test. A deliberately incomplete synthetic fixture produced the reported “missing” alert; the schema error now identifies its required field. The user's six saved definitions and open Timestamp draft were transferred once through the current repository contract into the new store, verified, and the original JSON/app remained untouched. That one-time transfer is not runtime compatibility code.
+
+Full WYSIWYG, attachments, arbitrary rich-format fidelity, actual Zendesk paste/channel acceptance and permission-enabled external expansion remain unverified/future work. Markdown root templates are excluded from automatic Accessibility expansion.
+
+An existing SQLite file without saved state is surfaced and preserved, never replaced with starters. Group management now uses standard 8-point header spacing and baseline alignment beside the Groups title.

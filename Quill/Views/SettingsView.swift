@@ -25,8 +25,8 @@ struct SettingsView: View {
     let expansion: ExpansionController?
     @Environment(\.scenePhase) private var scenePhase
     @SceneStorage("settings.category") private var pageName = SettingsPage.general.rawValue
+    @State private var proposedHistoryLimit: Int?
     private var page: SettingsPage { SettingsPage(rawValue: pageName) ?? .general }
-    @State private var restoreRevision: LibraryRevision?
     var body: some View {
         VStack(spacing: 0) {
             HStack(spacing: 6) {
@@ -57,20 +57,21 @@ struct SettingsView: View {
         .background(Color(nsColor: .windowBackgroundColor))
         .onAppear { preferences.refreshLoginStatus(); Task { await store.refreshHistory() } }
         .onChange(of: scenePhase) { _, phase in if phase == .active { preferences.refreshLoginStatus(); expansion?.refreshPermissions() } }
-        .alert("Replace Library?", isPresented: Binding(get: { store.pendingImport != nil }, set: { if !$0 { store.pendingImport = nil } })) {
-            Button("Cancel", role: .cancel) { store.pendingImport = nil }
-            Button("Replace", role: .destructive) { Task { await store.applyImport() } }
-                .disabled(store.hasUnsavedChanges || store.isBusy)
-        } message: {
-            Text("Import \(store.pendingImport?.snippets.count ?? 0) snippets in \(store.pendingImport?.groups.count ?? 0) groups? Your current saved library will be backed up first. Save or revert all drafts before replacing it.")
-        }
-        .alert("Restore Revision?", isPresented: Binding(get: { restoreRevision != nil }, set: { if !$0 { restoreRevision = nil } })) {
-            Button("Cancel", role: .cancel) { restoreRevision = nil }
-            Button("Restore", role: .destructive) {
-                if let revision = restoreRevision { Task { await store.restore(revision) } }
-                restoreRevision = nil
+        .alert("Keep Fewer Versions?", isPresented: Binding(get: { proposedHistoryLimit != nil }, set: { if !$0 { proposedHistoryLimit = nil } }), presenting: proposedHistoryLimit) { limit in
+            Button("Cancel", role: .cancel) { proposedHistoryLimit = nil }
+            Button("Apply", role: .destructive) {
+                Task { await store.changeHistoryLimit(limit) }
+                proposedHistoryLimit = nil
             }
-        } message: { Text("This replaces the saved library. The current file, including damaged data, is preserved in History first.") }
+        } message: { limit in Text("Older versions beyond the newest \(limit) per template will be removed. Versions marked Keep stay available. Export a library backup first if you want to preserve all history.") }
+        .alert("Replace Library?", isPresented: Binding(get: { store.pendingImport != nil }, set: { if !$0 { store.pendingImport = nil } }), presenting: store.pendingImport) { imported in
+            Button("Cancel", role: .cancel) { store.pendingImport = nil }
+            Button("Replace", role: .destructive) { Task { await store.applyImport(imported) } }
+                .disabled(store.hasUnsavedChanges || store.isBusy)
+        } message: { imported in
+            Text("Import \(imported.snippets.count) snippets in \(imported.groups.count) groups? Your current saved library will be backed up first. Save or revert all drafts before replacing it.")
+        }
+
     }
     private var general: some View {
         Group {
@@ -98,7 +99,7 @@ struct SettingsView: View {
                 Text(store.storageURL.path).font(.caption).textSelection(.enabled)
                 HStack {
                     Button("Reveal in Finder") { NSWorkspace.shared.activateFileViewerSelecting([store.storageURL]) }
-                    Button("Choose Location…", action: chooseLocation).disabled(!canReplace)
+                    Button(store.isLoaded ? "Choose Location…" : "Open Library Folder…", action: chooseLocation).disabled(store.isBusy || store.hasUnsavedChanges)
                         .help("Copies your saved library to the selected folder and keeps the original.")
                 }
             }
@@ -106,24 +107,34 @@ struct SettingsView: View {
                 Button("Import from TextExpander…") { store.showTextExpanderImport = true }.disabled(!canReplace)
                 HStack {
                     Button("Import Quill JSON…", action: importLibrary).disabled(!canReplace)
-                    Button("Export Quill JSON…", action: exportLibrary).disabled(!store.isLoaded || store.isBusy)
+                    Menu("Export…") {
+                        Button("Quill JSON — Saved Templates…", action: exportLibrary)
+                        Button("Library Backup — Includes History…", action: exportBackup)
+                    }.disabled(!store.isLoaded || store.isBusy)
                 }
             }
             Section("History & Recovery") {
+                Button("Open Backup…", action: openBackup).disabled(store.isBusy || store.hasUnsavedChanges)
+                Picker("Versions per template", selection: Binding(get: { store.historyLimit }, set: { value in if value < store.historyLimit { proposedHistoryLimit = value } else { Task { await store.changeHistoryLimit(value) } } })) {
+                    Text("30").tag(30); Text("100").tag(100); Text("500").tag(500)
+                }.disabled(!store.isLoaded || store.isBusy)
+                Text("Kept versions stay until you stop keeping them. The newest versions include deleted content. Complete library backups stay until you remove them.").font(.caption).foregroundStyle(.secondary)
+                Button("Deleted Templates…") { store.historyRequest = HistoryRequest(itemID: nil) }.disabled(!store.isLoaded)
+
                 HStack {
                     Button("Back Up Now") { Task { await store.backup() } }.disabled(store.isBusy)
                     Button("Reveal History") { NSWorkspace.shared.open(store.storageURL.deletingLastPathComponent().appending(path: "Quill History")) }
                     Button("Refresh") { Task { await store.refreshHistory() } }
                 }
-                Text("Previous versions are backed up automatically.").font(.caption).foregroundStyle(.secondary)
+                Text("Saved template versions live in History beside each editor. These backups recover the whole saved library.").font(.caption).foregroundStyle(.secondary)
                 ForEach(store.revisions.prefix(20)) { revision in
                     LabeledContent {
-                        Button("Restore…") { restoreRevision = revision }.disabled(store.isBusy || store.hasUnsavedChanges)
+                        Button("Restore…") { store.backupRequest = revision }.disabled(store.isBusy || store.hasUnsavedChanges || !revision.isRecoverable)
                     } label: {
-                        Text(revision.date, format: .dateTime.year().month().day().hour().minute().second())
+                        VStack(alignment: .leading) { Text(revision.date, format: .dateTime.year().month().day().hour().minute().second()); Text(!revision.isRecoverable ? "Preserved damaged database" : revision.url.pathExtension == "quillbackup" ? "Complete library backup" : "Saved templates snapshot").font(.caption).foregroundStyle(.secondary) }
                     }
                 }
-                if store.revisions.isEmpty { Text("No revisions yet.").foregroundStyle(.secondary) }
+                if store.revisions.isEmpty { Text("No library backups yet.").foregroundStyle(.secondary) }
                 if let message = store.storageMessage { Text(message).textSelection(.enabled) }
             }
         }
@@ -131,7 +142,7 @@ struct SettingsView: View {
     private var privacy: some View {
         Group {
             Section("Local Data") {
-                Text("Quill does not upload snippets, read the clipboard, or retain keystroke logs. Optional aggregate usage totals stay on this Mac. Copy Preview writes only when you choose it.")
+                Text("Quill does not upload snippets, read the clipboard, or retain keystroke logs. Optional aggregate usage totals stay on this Mac. Authored drafts are checkpointed for recovery; fill-in values and resolved previews are never saved to history. Copy writes only when you choose it.")
             }
             Section("Expansion Permissions") {
                 Text("Expansion starts only after you grant access through the Expansion setup controls and explicitly enable it. Secure input and password fields are excluded.")
@@ -158,11 +169,19 @@ struct SettingsView: View {
     private func chooseLocation() {
         let panel = NSOpenPanel(); panel.canChooseFiles = false; panel.canChooseDirectories = true
         panel.prompt = "Use Folder"
-        if panel.runModal() == .OK, let url = panel.url { Task { await store.moveStorage(to: url) } }
+        if panel.runModal() == .OK, let url = panel.url { Task { if store.isLoaded { await store.moveStorage(to: url) } else { await store.openStorage(in: url) } } }
     }
     private func importLibrary() {
         let panel = NSOpenPanel(); panel.allowedContentTypes = [.json]; panel.allowsMultipleSelection = false
         if panel.runModal() == .OK, let url = panel.url { Task { await store.previewImport(from: url) } }
+    }
+    private func openBackup() {
+        let panel = NSOpenPanel(); panel.allowsMultipleSelection = false; panel.allowedContentTypes = [QuillFileTypes.libraryBackup, .json]
+        if panel.runModal() == .OK, let url = panel.url { store.backupRequest = LibraryRevision(url: url, date: .now) }
+    }
+    private func exportBackup() {
+        let panel = NSSavePanel(); panel.allowedContentTypes = [QuillFileTypes.libraryBackup]; panel.nameFieldStringValue = "Quill Library.quillbackup"
+        if panel.runModal() == .OK, let url = panel.url { Task { await store.exportBackup(to: url) } }
     }
     private func exportLibrary() {
         let panel = NSSavePanel(); panel.allowedContentTypes = [.json]; panel.nameFieldStringValue = "Quill Library.json"
