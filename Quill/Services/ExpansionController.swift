@@ -8,12 +8,21 @@ import Observation
         didSet {
             persistPolicy()
             pending?.cancel()
+            prompt.cancel(); awaitingFields = false; formTransaction = nil
             if isEnabled && !policy.hasApplicationScope {
                 pause()
                 status = "Paused. Choose an application or select All Applications."
             }
         }
     }
+    var duration: ExpansionDuration {
+        didSet {
+            defaults.set(duration.rawValue, forKey: "expansionDuration")
+            if isEnabled { configureDuration() }
+        }
+    }
+    private(set) var endsAt: Date?
+    private var expiration: Task<Void, Never>?
     private(set) var isEnabled = false
     private(set) var accessibilityGranted = false
     private(set) var inputGranted = false
@@ -22,12 +31,18 @@ import Observation
     private let defaults: UserDefaults
     private var tap: CFMachPort?
     private var source: CFRunLoopSource?
+    private let prompt = ExpansionPrompt()
+    private var awaitingFields = false
+    private var formTransaction: UUID?
     private var pending: Task<Void, Never>?
 
     init(store: LibraryStore, defaults: UserDefaults = .standard) {
         self.store = store; self.defaults = defaults
         policy = defaults.data(forKey: "expansionPolicy").flatMap { try? JSONDecoder().decode(ExpansionPolicy.self, from: $0) } ?? ExpansionPolicy()
+        duration = defaults.string(forKey: "expansionDuration").flatMap(ExpansionDuration.init(rawValue:)) ?? .untilQuit
         refreshPermissions()
+        // Resuming is opt-in: a successful explicit Enable with Across Launches arms this.
+        if duration == .always && defaults.bool(forKey: "expansionAcrossLaunches") { enable() }
     }
     func refreshPermissions() {
         accessibilityGranted = AXIsProcessTrusted()
@@ -37,14 +52,26 @@ import Observation
     // These are called only by separate user-initiated setup buttons, never during launch or enablement.
     func requestAccessibility() {
         _ = AXIsProcessTrustedWithOptions(["AXTrustedCheckOptionPrompt": true] as CFDictionary)
+        openPermissionSettings("Privacy_Accessibility")
         refreshPermissions()
+        if !accessibilityGranted { status = "Allow Quill in the Accessibility settings, then return here to enable expansion." }
     }
-    func requestInputMonitoring() { _ = CGRequestListenEventAccess(); refreshPermissions() }
+    func requestInputMonitoring() {
+        _ = CGRequestListenEventAccess()
+        openPermissionSettings("Privacy_ListenEvent")
+        refreshPermissions()
+        if !inputGranted { status = "Allow Quill in Input Monitoring. If Quill is missing, click + and choose Quill in Applications. Quit and reopen Quill if macOS asks." }
+    }
+    private func openPermissionSettings(_ pane: String) {
+        if let url = URL(string: "x-apple.systempreferences:com.apple.preference.security?\(pane)") {
+            NSWorkspace.shared.open(url)
+        }
+    }
     func enable() {
         refreshPermissions()
         guard accessibilityGranted, inputGranted else { status = "Grant both permissions through Setup, then refresh. No monitoring started."; return }
         guard policy.hasApplicationScope else { status = "Choose an application or select All Applications first."; return }
-        guard tap == nil else { return }
+        guard tap == nil else { configureDuration(); return }
         let mask = CGEventMask(1 << CGEventType.keyDown.rawValue)
         let callback: CGEventTapCallBack = { _, type, event, context in
             guard let context else { return Unmanaged.passUnretained(event) }
@@ -62,10 +89,28 @@ import Observation
         self.tap = tap; self.source = source
         CFRunLoopAddSource(CFRunLoopGetMain(), source, .commonModes)
         CGEvent.tapEnable(tap: tap, enable: true)
-        isEnabled = true; status = "Expansion is enabled. Excluded apps, secure input and unsupported editors are skipped."
+        isEnabled = true
+        configureDuration()
+        status = "Expansion is enabled. Excluded apps, secure input and unsupported editors are skipped."
+    }
+    private func configureDuration() {
+        expiration?.cancel(); expiration = nil
+        defaults.set(duration == .always, forKey: "expansionAcrossLaunches")
+        endsAt = duration.interval.map { Date.now.addingTimeInterval($0) }
+        if let interval = duration.interval {
+            expiration = Task { [weak self] in
+                do { try await Task.sleep(for: .seconds(interval)) } catch { return }
+                guard let self, !Task.isCancelled else { return }
+                self.pause()
+                self.status = "Timer ended. Expansion is paused."
+            }
+        }
     }
     func pause() {
+        expiration?.cancel(); expiration = nil; endsAt = nil
+        defaults.set(false, forKey: "expansionAcrossLaunches")
         pending?.cancel(); pending = nil
+        prompt.cancel(); awaitingFields = false; formTransaction = nil
         if let source { CFRunLoopRemoveSource(CFRunLoopGetMain(), source, .commonModes) }
         if let tap { CGEvent.tapEnable(tap: tap, enable: false); CFMachPortInvalidate(tap) }
         source = nil; tap = nil; isEnabled = false; status = "Paused. No input monitoring is active."
@@ -75,41 +120,83 @@ import Observation
         if type == .tapDisabledByTimeout || type == .tapDisabledByUserInput {
             pause(); status = "macOS stopped monitoring. Enable again after reviewing permissions."; return
         }
-        guard isEnabled else { return }
+        guard isEnabled, !awaitingFields else { return }
         refreshPermissions()
         guard isEnabled, !IsSecureEventInputEnabled() else { status = "Suspended while secure input is active."; return }
         guard event.flags.intersection([.maskCommand, .maskControl, .maskAlternate]).isEmpty,
               event.getIntegerValueField(.keyboardEventAutorepeat) == 0,
               let app = NSWorkspace.shared.frontmostApplication, let bundleID = app.bundleIdentifier,
-              bundleID != Bundle.main.bundleIdentifier, policy.allows(bundleID), isDirectKeyboardLayout() else { return }
+              bundleID != Bundle.main.bundleIdentifier, policy.allows(bundleID) else { return }
         var units = [UniChar](repeating: 0, count: 8)
         var count = 0
         event.keyboardGetUnicodeString(maxStringLength: units.count, actualStringLength: &count, unicodeString: &units)
         let characters = String(utf16CodeUnits: units, count: count)
         let key = event.getIntegerValueField(.keyboardEventKeycode)
-        guard characters.contains(where: { policy.delimiters.contains($0) }) || (key == 36 && policy.delimiters.contains("\n")) || (key == 48 && policy.delimiters.contains("\t")) else { return }
+        // IME candidate keystrokes are not committed text. Inspect only after Return commits.
+        guard isDirectKeyboardLayout() || key == 36 else { return }
+        guard policy.trigger == .immediately || characters.contains(where: { policy.delimiters.contains($0) }) || (key == 36 && policy.delimiters.contains("\n")) || (key == 48 && policy.delimiters.contains("\t")) else { return }
         let pid = app.processIdentifier
         guard let originalFocus = AccessibilityTextTarget.focusedElement(pid: pid) else { return }
         pending = Task { [weak self] in
             do { try await Task.sleep(for: .milliseconds(45)) } catch { return }
             guard let self, !Task.isCancelled, self.isEnabled, !self.store.isBusy,
-                  self.policy.allows(bundleID), self.isDirectKeyboardLayout(),
-                  let target = AccessibilityTextTarget.capture(pid: pid), CFEqual(target.element, originalFocus),
+                  self.policy.allows(bundleID) else { return }
+            guard let target = AccessibilityTextTarget.capture(pid: pid) else {
+                self.status = "\(app.localizedName ?? "This application") does not expose a writable text selection to Quill, or its input is protected."
+                return
+            }
+            guard CFEqual(target.element, originalFocus),
                   let match = AbbreviationMatcher.match(text: target.text, caret: target.selection.location, library: self.store.library, policy: self.policy),
-                  let snippet = self.store.library.snippets.first(where: { $0.id == match.snippetID }), snippet.format == .plainText else { return }
+                  let snippet = self.store.library.snippets.first(where: { $0.id == match.snippetID }) else { return }
             do {
                 let rendered = try TemplateRenderer.render(snippet, library: self.store.library)
-                try target.replace(match, with: rendered)
-                self.store.statistics.recordExpansion(outputCharacters: rendered.text.count, abbreviationCharacters: snippet.abbreviation.count)
-                self.status = "Expanded successfully."
+                if rendered.fields.isEmpty {
+                    try self.insert(rendered, target: target, match: match, snippet: snippet)
+                } else {
+                    self.awaitingFields = true
+                    let transactionID = UUID()
+                    self.formTransaction = transactionID
+                    self.status = "Complete the fill-ins to expand \(snippet.title)."
+                    self.prompt.show(snippet: snippet, library: self.store.library) { [weak self] result in
+                        guard let self, self.formTransaction == transactionID else { return }
+                        guard let result else {
+                            self.awaitingFields = false; self.formTransaction = nil
+                            self.status = "Expansion cancelled. Your abbreviation was kept."
+                            if self.isEnabled { app.activate() }
+                            return
+                        }
+                        guard self.isEnabled, self.policy.allows(bundleID), self.formTransaction == transactionID else {
+                            throw LibraryError.invalid("Expansion was paused or its application settings changed.")
+                        }
+                        // Await target activation without destroying the form or its literal answers.
+                        app.activate()
+                        try await Task.sleep(for: .milliseconds(80))
+                        guard self.isEnabled, self.policy.allows(bundleID), self.formTransaction == transactionID else {
+                            throw LibraryError.invalid("Expansion was paused or its application settings changed.")
+                        }
+                        do {
+                            try self.insert(result, target: target, match: match, snippet: snippet)
+                            self.awaitingFields = false; self.formTransaction = nil
+                        } catch {
+                            self.status = error.localizedDescription
+                            throw error
+                        }
+                    }
+                }
             } catch { self.status = error.localizedDescription }
         }
+    }
+    private func insert(_ result: RenderResult, target: AccessibilityTextTarget, match: ExpansionMatch, snippet: Snippet) throws {
+        // Accessibility insertion and cursor preview share the exact visible-text projection.
+        let output = try result.plainTextResult()
+        try target.replace(match, with: output)
+        store.statistics.recordExpansion(outputCharacters: output.text.count, abbreviationCharacters: snippet.abbreviation.count)
+        status = "Expanded \(snippet.title)."
     }
     private func isDirectKeyboardLayout() -> Bool {
         guard let input = TISCopyCurrentKeyboardInputSource()?.takeRetainedValue(),
               let type = TISGetInputSourceProperty(input, kTISPropertyInputSourceType) else { return false }
-        let value = Unmanaged<CFString>.fromOpaque(type).takeUnretainedValue()
-        return CFEqual(value, kTISTypeKeyboardLayout)
+        return CFEqual(Unmanaged<CFString>.fromOpaque(type).takeUnretainedValue(), kTISTypeKeyboardLayout)
     }
     private func persistPolicy() {
         if let data = try? JSONEncoder().encode(policy) { defaults.set(data, forKey: "expansionPolicy") }

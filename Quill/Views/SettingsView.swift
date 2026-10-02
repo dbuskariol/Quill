@@ -3,21 +3,6 @@ import ServiceManagement
 import SwiftUI
 import UniformTypeIdentifiers
 
-private enum SettingsPage: String, CaseIterable, Identifiable {
-    case general = "General", storage = "Library", expansion = "Expansion", privacy = "Privacy", statistics = "Statistics", updates = "Updates"
-    var id: Self { self }
-    var symbol: String {
-        switch self {
-        case .general: "gearshape"
-        case .storage: "folder"
-        case .expansion: "text.cursor"
-        case .privacy: "hand.raised"
-        case .statistics: "chart.bar"
-        case .updates: "arrow.triangle.2.circlepath"
-        }
-    }
-}
-
 struct SettingsView: View {
     @Bindable var preferences: AppPreferences
     @Bindable var store: LibraryStore
@@ -55,7 +40,8 @@ struct SettingsView: View {
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .navigationTitle("Settings")
         .background(Color(nsColor: .windowBackgroundColor))
-        .onAppear { preferences.refreshLoginStatus(); Task { await store.refreshHistory() } }
+        .onAppear { applyRequestedPage(); preferences.refreshLoginStatus(); Task { await store.refreshHistory() } }
+        .onChange(of: store.requestedSettingsPage) { _, _ in applyRequestedPage() }
         .onChange(of: scenePhase) { _, phase in if phase == .active { preferences.refreshLoginStatus(); expansion?.refreshPermissions() } }
         .alert("Keep Fewer Versions?", isPresented: Binding(get: { proposedHistoryLimit != nil }, set: { if !$0 { proposedHistoryLimit = nil } }), presenting: proposedHistoryLimit) { limit in
             Button("Cancel", role: .cancel) { proposedHistoryLimit = nil }
@@ -73,6 +59,12 @@ struct SettingsView: View {
         }
 
     }
+    private func applyRequestedPage() {
+        if let requested = store.requestedSettingsPage {
+            pageName = requested.rawValue
+            store.requestedSettingsPage = nil
+        }
+    }
     private var general: some View {
         Group {
             Section {
@@ -80,7 +72,14 @@ struct SettingsView: View {
                     .disabled(!preferences.showDock).help("Keep the Dock or menu bar entry available.")
                 Toggle("Show Quill in the Dock", isOn: $preferences.showDock)
                     .disabled(!preferences.showMenuBar).help("Keep the Dock or menu bar entry available.")
-                Toggle("Quit when the last window closes", isOn: $preferences.quitWhenLastWindowCloses)
+                Picker("When the library window closes", selection: $preferences.quitWhenLastWindowCloses) {
+                    Text("Keep Quill Running").tag(false)
+                    Text("Quit Quill").tag(true)
+                }
+                Text(preferences.quitWhenLastWindowCloses
+                     ? "Closing the last window quits Quill and stops expansion."
+                     : "Quill stays available in the menu bar or Dock. Use Quit Quill to stop it.")
+                    .font(.caption).foregroundStyle(.secondary)
             }
             Section {
                 Toggle("Launch at login", isOn: Binding(get: { preferences.loginStatus == .enabled }, set: { preferences.setLaunchAtLogin($0) }))
@@ -88,7 +87,6 @@ struct SettingsView: View {
                     Text("Approval is required in macOS Login Items.")
                     Button("Open Login Items") { SMAppService.openSystemSettingsLoginItems() }
                 }
-                if preferences.loginStatus == .notFound { Text("Launch at login is unavailable from this development location.").foregroundStyle(.secondary) }
                 if let error = preferences.loginError { Label(error, systemImage: "exclamationmark.triangle").foregroundStyle(.red) }
             }
         }
@@ -145,7 +143,7 @@ struct SettingsView: View {
                 Text("Quill does not upload snippets, read the clipboard, or retain keystroke logs. Optional aggregate usage totals stay on this Mac. Authored drafts are checkpointed for recovery; fill-in values and resolved previews are never saved to history. Copy writes only when you choose it.")
             }
             Section("Expansion Permissions") {
-                Text("Expansion starts only after you grant access through the Expansion setup controls and explicitly enable it. Secure input and password fields are excluded.")
+                Text("Expansion starts only after you grant access through the Expansion setup controls and explicitly enable it. Across Launches resumes expansion only after you choose that mode and enable it. Secure input and password fields are excluded.")
             }
             Section("Update Connections") {
                 Text("When a signed release feed is configured, checking for updates contacts that feed. Automatic checks are off by default; library content is never sent.")

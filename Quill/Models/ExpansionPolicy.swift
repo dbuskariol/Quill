@@ -12,6 +12,12 @@ struct ExpansionPolicy: Codable, Equatable, Sendable {
         var id: Self { self }
         var title: String { self == .all ? "All Applications" : "Selected Applications" }
     }
+    enum Trigger: String, Codable, CaseIterable, Identifiable {
+        case immediately, delimiter
+        var id: Self { self }
+        var title: String { self == .immediately ? "Immediately" : "After Space, Tab or Return" }
+    }
+    var trigger = Trigger.immediately
     var delimiters = " \t\n"
     var caseSensitive = true
     var requiresWordBoundary = true
@@ -52,8 +58,10 @@ enum AbbreviationMatcher {
         let source = text as NSString
         guard caret > 0, caret <= source.length else { return nil }
         let prefix = source.substring(to: caret)
-        guard let last = prefix.last, policy.delimiters.contains(last) else { return nil }
-        let delimiter = String(last)
+        let delimiter: String
+        if let last = prefix.last, policy.delimiters.contains(last) { delimiter = String(last) }
+        else if policy.trigger == .immediately { delimiter = "" }
+        else { return nil }
         let end = caret - delimiter.utf16.count
         var matches: [ExpansionMatch] = []
         for snippet in library.snippets {
@@ -71,6 +79,14 @@ enum AbbreviationMatcher {
             matches.append(.init(snippetID: snippet.id, range: NSRange(location: range.location, length: count + delimiter.utf16.count), delimiter: delimiter))
         }
         // Any policy collision is rejected rather than choosing an arbitrary snippet.
-        return matches.count == 1 ? matches[0] : nil
+        guard matches.count == 1, let match = matches.first else { return nil }
+        // A short abbreviation must not consume the prefix of a longer abbreviation.
+        if delimiter.isEmpty, let snippet = library.snippets.first(where: { $0.id == match.snippetID }),
+           library.snippets.contains(where: { other in
+               other.id != snippet.id && other.abbreviation.count > snippet.abbreviation.count &&
+               (policy.caseSensitive ? other.abbreviation.hasPrefix(snippet.abbreviation) :
+                   other.abbreviation.lowercased().hasPrefix(snippet.abbreviation.lowercased()))
+           }) { return nil }
+        return match
     }
 }

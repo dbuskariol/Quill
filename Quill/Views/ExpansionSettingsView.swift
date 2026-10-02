@@ -6,23 +6,37 @@ struct ExpansionSettingsView: View {
     @Bindable var expansion: ExpansionController
     var body: some View {
         Section {
-            Text(expansion.status).textSelection(.enabled)
+            Text(expansion.status).id(expansion.status).textSelection(.enabled)
             Button(expansion.isEnabled ? "Pause Expansion" : "Enable Expansion") {
                 if expansion.isEnabled { expansion.pause() } else { expansion.enable() }
             }
-            Text("Paused at launch. Supports plain templates in allowed text editors; fill-ins and composing input methods are not supported yet.").font(.caption).foregroundStyle(.secondary)
+            Picker("Keep expansion enabled", selection: $expansion.duration) {
+                ForEach(ExpansionDuration.allCases) { Text($0.title).tag($0) }
+            }
+            Text(expansion.duration.explanation).font(.caption).foregroundStyle(.secondary)
+            if let deadline = expansion.endsAt {
+                LabeledContent("Pauses at", value: deadline.formatted(date: .omitted, time: .shortened))
+            }
+            Text("Type a saved abbreviation in an application you allow. Templates with fill-ins open a form before insertion.").font(.caption).foregroundStyle(.secondary)
         }
         Section("Permission Setup") {
             LabeledContent("Accessibility", value: expansion.accessibilityGranted ? "Granted" : "Not granted")
             Button("Set Up Accessibility…") { expansion.requestAccessibility() }.disabled(expansion.accessibilityGranted)
             LabeledContent("Input Monitoring", value: expansion.inputGranted ? "Granted" : "Not granted")
             Button("Set Up Input Monitoring…") { expansion.requestInputMonitoring() }.disabled(expansion.inputGranted)
+            if !expansion.inputGranted {
+                Text("If Quill isn’t listed in Input Monitoring, click + and choose Quill in Applications. Reopen Quill if macOS asks.").font(.caption).foregroundStyle(.secondary)
+                Button("Show Quill in Finder") { NSWorkspace.shared.activateFileViewerSelecting([Bundle.main.bundleURL]) }
+            }
             Button("Refresh Permission Status") { expansion.refreshPermissions() }
-            Text("These permissions let Quill detect delimiters and replace text in allowed apps. Password fields and secure input are excluded; keystrokes are not recorded.").font(.caption).foregroundStyle(.secondary)
+            Text("These permissions let Quill detect abbreviations and replace text in allowed apps. Password fields and secure input are excluded; keystrokes are not recorded.").font(.caption).foregroundStyle(.secondary)
         }
         Section("Matching") {
-            TextField("Delimiters", text: $expansion.policy.delimiters)
-            Button("Use Space, Tab and Return") { expansion.policy.delimiters = " \t\n" }
+            Picker("Expand abbreviations", selection: $expansion.policy.trigger) {
+                ForEach(ExpansionPolicy.Trigger.allCases) { Text($0.title).tag($0) }
+            }
+            Text("When one abbreviation starts another, finish the longer abbreviation or press Space to expand the shorter one.")
+                .font(.caption).foregroundStyle(.secondary)
             Toggle("Match abbreviation case", isOn: $expansion.policy.caseSensitive)
             Toggle("Require a word boundary before abbreviations", isOn: $expansion.policy.requiresWordBoundary)
         }
@@ -58,6 +72,9 @@ struct ExpansionSettingsView: View {
             }
             Text("Excluded applications never expand. Password fields and secure input are always protected, including in All Applications mode.")
                 .font(.caption).foregroundStyle(.secondary)
+        }
+        .onReceive(NotificationCenter.default.publisher(for: NSApplication.didBecomeActiveNotification)) { _ in
+            expansion.refreshPermissions()
         }
     }
 }

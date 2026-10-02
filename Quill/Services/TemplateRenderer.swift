@@ -20,6 +20,16 @@ struct RenderResult: Equatable, Sendable {
     var fieldDefinitions: [TemplateField] = []
     var zendeskPlaceholders: [String] = []
     var format: ContentFormat = .plainText
+
+    func plainTextResult() throws -> RenderResult {
+        guard format == .markdown else { return self }
+        let document = try MarkdownDocument(text)
+        var result = self
+        result.text = document.plainText
+        result.cursorUTF16Offset = try cursorUTF16Offset.map { try document.plainTextCursorOffset(for: $0) }
+        result.format = .plainText
+        return result
+    }
 }
 
 enum TemplateError: LocalizedError, Equatable {

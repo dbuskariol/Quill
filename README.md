@@ -4,6 +4,10 @@ Quill is a native snippet library and template editor for macOS 26. It brings re
 
 <img src="Design/Quill-Icon-1024.png" alt="Quill app icon" width="128">
 
+![Quill’s native workspace with a support reply, reusable sign-off, Zendesk placeholders, and formatted Markdown preview](Documentation/Screenshots/library-workspace.png)
+
+Screenshots use a separate sample library. Click an image to inspect it at full resolution.
+
 ## A useful snippet library
 
 Organize snippets into groups, mark favorites, and search titles, abbreviations, tags, and template content. The source-list sidebar keeps Snippets, Custom Macros, and Settings together; Settings opens inside the workspace from the bottom-left button or Command-comma.
@@ -17,6 +21,8 @@ Select a snippet, edit its source, preview the resolved reply, then save or copy
 - Repeat the last copy from the app's in-memory clipboard payload.
 
 See the [workspace and UX map](Documentation/UX_MAP.md) for feature placement and editing flows.
+
+![Quick Actions showing a searchable snippet library and a reply filled in with a sample name](Documentation/Screenshots/quick-actions.png)
 
 ## Compose replies from reusable blocks
 
@@ -35,6 +41,8 @@ Type `{{` to open native completion, or continue with a partial name such as `{{
 | Date seven days ahead | `{{date:yyyy-MM-dd\|7}}` |
 
 Fill-in values remain literal text and required empty fields prevent copying. See [macro syntax and Zendesk placeholders](Documentation/MACROS.md) for the complete contract.
+
+![Custom Macros with named reusable blocks, template source, and a resolved sign-off preview](Documentation/Screenshots/custom-macros.png)
 
 ## Prepare replies for Zendesk
 
@@ -60,7 +68,11 @@ See [content, storage, and history](Documentation/CONTENT_AND_HISTORY.md) for re
 
 Quill uses SwiftUI split views, system toolbars, menus, SF Symbols, native panels, and a narrow AppKit text editor. Settings manages storage, history, appearance, menu/Dock behavior, launch at login, and expansion policy within the existing workspace.
 
-Abbreviation expansion starts paused on every launch. Explicit setup and session enablement are required, and only allowed applications with supported writable Accessibility text ranges can receive an expansion. The current engine handles plain-text root templates without fill-ins; secure input, password fields, excluded apps, and non-direct input methods are skipped. Choose All Applications or Selected Applications, then manage app selections and exclusions through the native app chooser and +/− controls. Permission-enabled target acceptance remains open.
+Expansion defaults to **Until Quill Quits** and requires explicit permission setup and Enable. Choose **15 Minutes**, **1 Hour**, or **Across Launches** to control its duration. Across Launches resumes only after you explicitly enable it; Pause disarms automatic resumption. Closing the library can leave Quill running in the menu bar, and its Dock icon can be hidden while menu bar access remains available. Quit Quill always ends the running session.
+
+Abbreviations can expand immediately or after Space, Tab or Return. Templates with fill-ins open a native form before insertion. Choose All Applications or Selected Applications, then manage selections and exclusions through the native app chooser and +/− controls. Writable Accessibility text selections are required; secure input and password fields remain protected. Permission-enabled external target acceptance is tracked in [expansion acceptance](Documentation/EXPANSION_ACCEPTANCE.md).
+
+![Embedded expansion settings with explicit enablement, session duration, permission status, and abbreviation matching controls](Documentation/Screenshots/expansion-settings.png)
 
 ## Architecture
 
@@ -86,7 +98,7 @@ Requires macOS 26 or later, Xcode 26 or later with the macOS 26 SDK, and Swift 6
 ./script/build_and_run.sh
 ```
 
-The committed Xcode project runs without a generator; `project.yml` is its XcodeGen source specification. Build artifacts live in external DerivedData. Debug builds use ad-hoc signing for local development; stable signing is required for reliable macOS permission acceptance.
+The committed Xcode project runs without a generator; `project.yml` is its XcodeGen source specification. Build artifacts live in external DerivedData. Interactive builds use the same Developer ID, bundle identifier and designated requirement as releases, installed at `/Applications/Quill.app`. Quit normally before using Run so draft recovery can flush. The CI test host is separately ad-hoc signed and must not be used to grant or verify permissions.
 
 Run the CI-equivalent gate with:
 
@@ -94,7 +106,7 @@ Run the CI-equivalent gate with:
 ./script/verify-ci.sh
 ```
 
-The gate validates scripts, metadata, whitespace, a nonzero Swift Testing result, and an unsigned universal Release build. GitHub Actions runs it on macOS 26 Apple silicon and Intel. The latest local verification passed 76 tests across 11 suites and the universal Release build. See [verification evidence](Documentation/VERIFICATION.md) for observations and remaining acceptance.
+The gate validates scripts, metadata, whitespace, a nonzero Swift Testing result, and an unsigned universal Release build. GitHub Actions runs it on macOS 26 Apple silicon and Intel. The latest local verification passed 82 tests across 11 suites and the universal Release build. See [verification evidence](Documentation/VERIFICATION.md) for observations and remaining acceptance.
 
 Repository maintainers use `./script/setup-repository.sh` to configure the required local author/committer identity and hooks. `./script/gh-quill.sh` pins GitHub operations to `dbuskariol` without changing the globally active account.
 

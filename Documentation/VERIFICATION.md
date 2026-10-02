@@ -50,3 +50,16 @@ An existing SQLite file without saved state is surfaced and preserved, never rep
 ## Application selection and sidebar refinement — 2026-10-02
 
 The final local gate passed 78 Swift Testing tests and an unsigned universal Release build. New policy tests cover all-apps scope, editable exclusions, empty identifiers, Codable persistence, duplicate selection and moving an app between opposing lists. Native QA used a separate app identity and temporary library: selected-app addition through the macOS app chooser, selected-app removal, exclusion removal and addition, and switching to All Applications were exercised. App names/icons and the right-aligned, smaller Groups control were visually inspected. A fresh library showed the neutral signature name fill-in. No OS expansion permission was requested or monitoring enabled during this QA; external-target acceptance remains separate. Existing user templates and drafts were not modified.
+
+## Current expansion repair acceptance
+
+See [EXPANSION_ACCEPTANCE.md](EXPANSION_ACCEPTANCE.md) for the signed interactive identity, observed native workflows and required external expansion gate. Current-source verification passed 80 tests and the universal Release build. The interactive app is installed at `/Applications/Quill.app`; permission confirmation and real automatic replacement remain pending. No next release has been cut.
+
+Expansion duration/background repair: `/tmp/quill-background-final-gate.log` passed 81 tests and universal Release. `/tmp/quill-duration-install.log` built, strictly verified and installed the signed app through the Run script. Both grants survived changed-binary reinstall. Native Across Launches resumption, timed deadline, hide-Dock reachability, continued process after window close, library reopen and login registration/unregistration were observed. Physical keyboard and external expansion transactions remain pending; no release readiness claim.
+
+
+## Visible cursor and fill-in transaction repair — 2026-10-02
+
+`/tmp/quill-cursor-boundaries-gate.log` passed 82 tests in 11 suites plus the universal Release build. Markdown expansion now shares its visible-text and cursor projection with preview; native source mapping and cursor regression cases cover list prefixes, entities/Unicode, links, code and protected literal content. Fill-in submissions retain the existing form and answers on failure, and invalidated transaction IDs cannot write after a policy change or pause. Native external transaction acceptance remains pending. The README now includes four actual native screenshots captured against a separate sample library.
+
+The final interactive gate `/tmp/quill-final-interactive-gate.log` passed the same 82 tests and universal Release. The signed repair was installed and strictly verified; both permission grants survived. The native Markdown cursor diagnostic was observed and the disposable edit reverted. Status text now recreates its selectable accessibility node on state changes; Enabled is reported consistently by parent and child.

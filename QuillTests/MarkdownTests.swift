@@ -43,6 +43,42 @@ struct MarkdownTests {
         #expect(link.html.contains("href=\"https://example.com\""))
         #expect(link.warnings.isEmpty)
     }
+    @Test func cursorFollowsVisibleMarkdownRatherThanSourceMarkup() throws {
+        let cases: [(String, String, Int)] = [
+            ("**Hello** {{cursor}}world", "Hello world", 6),
+            ("# {{cursor}}Reply", "Reply", 0),
+            ("{{cursor}}- First\n- Second", "• First\n• Second", 0),
+            ("- {{cursor}}First\n- Second", "• First\n• Second", 2),
+            ("- First\n- {{cursor}}Second", "• First\n• Second", 10),
+            ("[Help](https://example.com){{cursor}} now", "Help now", 4),
+            ("[**na{{cursor}}me**](https://example.com)", "name", 2),
+            ("A \\* B &amp;{{cursor}} C", "A * B & C", 7),
+            ("A {{cursor}}&#x1F600; B", "A 😀 B", 2),
+            ("A &#x1F600;{{cursor}} B", "A 😀 B", 4),
+            ("🙂 **Hi**{{cursor}} {{ticket.requester.first_name}}", "🙂 Hi {{ticket.requester.first_name}}", 5),
+            ("{{ticket.id}}{{cursor}} done", "{{ticket.id}} done", 13),
+            ("`a  {{cursor}}b`", "a  b", 3),
+            ("```\nabc{{cursor}}\n```", "abc\n", 3),
+            ("    a\n    {{cursor}}b", "a\nb\n", 2),
+            ("a\n{{cursor}}b", "a b", 2),
+            ("<tag>{{cursor}} &amp;", "<tag> &", 5),
+            ("**Reply**{{cursor}}", "Reply", 5),
+            ("{{ticket.id}} <tag> **Hi**{{cursor}} {{ticket.title}}", "{{ticket.id}} <tag> Hi {{ticket.title}}", 22),
+            ("https://example\\.com{{cursor}} now", "https://example.com now", 19)
+        ]
+        let group = SnippetGroup(name: "Work")
+        for (body, expected, cursor) in cases {
+            let snippet = Snippet(groupID: group.id, title: "Cursor", abbreviation: ";c", body: body, format: .markdown)
+            let rendered = try TemplateRenderer.render(snippet, library: Library(groups: [group], snippets: [snippet]))
+            let document = try MarkdownDocument(rendered.text)
+            #expect(document.plainText == expected, "Source: \(body)")
+            let visible = try rendered.plainTextResult()
+            #expect(visible.format == .plainText)
+            #expect(visible.text == expected)
+            #expect(visible.cursorUTF16Offset == cursor, "Source: \(body)")
+        }
+    }
+
     @Test @MainActor func formattedCopyAndRepeatKeepAllFormatsOnAnOwnedPasteboard() throws {
         let name = "QuillTests-" + UUID().uuidString, defaults = try #require(UserDefaults(suiteName: name))
         let board = NSPasteboard(name: .init(name))
@@ -54,6 +90,10 @@ struct MarkdownTests {
         #expect(board.string(forType: .string) == "Hi {{ticket.id}}")
         let html = try #require(board.data(forType: .html)), rtf = try #require(board.data(forType: .rtf))
         #expect(String(decoding: html, as: UTF8.self).contains("<strong>Hi</strong>"))
+        let portable = try NSAttributedString(data: rtf, options: [.documentType: NSAttributedString.DocumentType.rtf], documentAttributes: nil)
+        #expect(portable.string == "Hi {{ticket.id}}")
+        let color = portable.attribute(.foregroundColor, at: 0, effectiveRange: nil) as? NSColor
+        #expect(color == nil || color?.usingColorSpace(.deviceRGB) == NSColor.black.usingColorSpace(.deviceRGB))
         board.clearContents(); board.setString("Other content", forType: .string)
         actions.repeatLastCopy()
         #expect(board.data(forType: .html) == html); #expect(board.data(forType: .rtf) == rtf)
