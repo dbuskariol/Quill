@@ -73,3 +73,10 @@ The final interactive gate `/tmp/quill-final-interactive-gate.log` passed the sa
 
 
 The actual 15-minute expansion session expired while its library window was closed. The same process remained alive; reopening after the displayed deadline showed Timer ended, expansion paused, and both grants still Granted. See the timestamped acceptance record. No clock override was used.
+
+
+## Notarized 0.1.2 candidate — 2026-10-02
+
+The commit-exact 0.1.2 (3) candidate passed `/tmp/quill-0.1.2-candidate-gate.log` with 84 tests and universal Release. GitHub [run 36973321013](https://github.com/dbuskariol/Quill/actions/runs/36973321013) for `eab9e6a` succeeded. The complete signing/notarization/stapling/Gatekeeper/Sparkle/package-manifest pipeline passed in `/tmp/quill-0.1.2-release.log`. The notarized candidate is installed at `/Applications/Quill.app`; both grants remain Granted after Debug-to-Release replacement.
+
+A real external timestamp replacement was observed in TextEdit with Quill's matching success status. Immediate timing, the external fill-in transaction, Undo/focus/composition and menu dismissal still need acceptance. The candidate tag exists locally; it and the GitHub release remain unpublished. Current evidence is tracked in the expansion acceptance record.
