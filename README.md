@@ -1,54 +1,109 @@
 # Quill
 
-Quill is a new native macOS 26 snippet library and template editor, built with Swift 6, SwiftUI, Observation, and AppKit. It is the foundation for a modern TextExpander alternative. **A conservative expansion engine is implemented but has not passed permission-enabled target acceptance. This is not release-ready or full TextExpander parity.**
+Quill is a native snippet library and template editor for macOS 26. It brings reusable replies, custom macros, Zendesk message placeholders, TextExpander import, Markdown preview, and local revision history into one focused Mac workspace.
 
-The runnable app includes five starter snippets across three groups, full-library search (including tags and body), favorites, create/edit/delete with confirmation, local atomic persistence, dry-run fill-in preview, date/time macros, cursor offsets, nested templates, cycle detection, and abbreviation collision diagnostics. It has real Settings, a menu bar entry point, conventional keyboard commands, adaptive appearance, and explicit storage errors. Expansion setup requests macOS permissions only through explicit buttons, and monitoring starts only when enabled for allowed apps. No analytics or content upload occurs; updates remain inactive until a signed Quill feed is configured.
+<img src="Design/Quill-Icon-1024.png" alt="Quill app icon" width="128">
 
-## Run
+## A useful snippet library
 
-Requires macOS 26+, Xcode 26+ with the macOS 26 SDK, and command-line tools selected for that Xcode. Open Quill.xcodeproj and run the shared Quill scheme, or use Codex's **Run** action:
+Organize snippets into groups, mark favorites, and search titles, abbreviations, tags, and template content. The source-list sidebar keeps Snippets, Custom Macros, and Settings together; Settings opens inside the workspace from the bottom-left button or Command-comma.
+
+Select a snippet, edit its source, preview the resolved reply, then save or copy. Drafts survive navigation and receive durable recovery checkpoints. Relaunch offers an explicit review of recovered edits. Validation errors explain what needs attention without preventing a snippet from being saved for later repair.
+
+- Create snippets with Command-N and save with Command-S.
+- Open Quick Actions with Command-K to find, fill, and copy a reply.
+- Toggle favorites with Shift-Command-D and confirm deletion with Command-Delete.
+- Manage groups beside the Groups heading, and edit tags alongside snippet metadata.
+- Repeat the last copy from the app's in-memory clipboard payload.
+
+See the [workspace and UX map](Documentation/UX_MAP.md) for feature placement and editing flows.
+
+## Compose replies from reusable blocks
+
+Custom Macros are named template blocks with their own editor, search, format, and history. Insert a macro with `{{macro:Signature}}` or another snippet with `{{snippet:;sig}}`. Blocks can contain dates, fill-ins, conditionals, and other blocks. Missing references, ambiguous abbreviations, and recursive cycles produce clear preview errors.
+
+Type `{{` to open native completion, or continue with a partial name such as `{{ma`, `{{sni`, or `{{ticket.re`. The shared Insert menu uses the same catalog and inserts at the current cursor or selection, with native text undo.
+
+| Need | Template example |
+| --- | --- |
+| Current date or time | `{{date}}`, `{{time}}` |
+| Reusable block | `{{macro:Signature}}` |
+| Simple field | `{{field:name}}` |
+| Multiline input | `{{input:notes\|multiline}}` |
+| Choice | `{{input:tone\|choice\|Formal\|Friendly}}` |
+| Conditional text | `{{if:tone=Formal}}Hello{{else}}Hi{{end}}` |
+| Date seven days ahead | `{{date:yyyy-MM-dd\|7}}` |
+
+Fill-in values remain literal text and required empty fields prevent copying. See [macro syntax and Zendesk placeholders](Documentation/MACROS.md) for the complete contract.
+
+## Prepare replies for Zendesk
+
+Insert Zendesk message substitutions such as `{{ticket.requester.first_name}}` through the placeholder picker, including custom ticket and user fields. Quill preserves these tokens for Zendesk to resolve when the reply is used there. No Zendesk account connection is required.
+
+Choose Plain Text or Markdown for each snippet and macro. Markdown receives a native formatted preview; formatted copying supplies HTML, RTF, and plain-text clipboard representations. Copy As Markdown and Copy As Plain Text provide explicit alternatives. Quill edits template source rather than providing a WYSIWYG composer. Unsupported Markdown constructs show preview limitations, and actual Zendesk editor/channel paste acceptance remains to be verified.
+
+## Bring your TextExpander library
+
+**Library → Import from TextExpander…** opens a dedicated review for CSV exports and older `.textexpander` group files. Quill converts supported date, cursor, nested-snippet, and fill-in macros into its own syntax.
+
+Review source and conversion warnings, select the snippets to import, and choose whether to skip or replace abbreviation conflicts. Unsupported content stays excluded. Imports add groups, create a complete safety backup, and support Undo Last Library Change. See the [format research and compatibility matrix](Documentation/TEXTEXPANDER_IMPORT.md) for supported exports and limitations.
+
+## Keep local history without managing Git
+
+Each meaningful save creates an immutable item revision in a transactional SQLite library. History beside Save compares metadata and source, keeps selected versions, and restores a previous version as a new revision. Deleted templates remain recoverable. Settings offers retention of 30, 100, or 500 versions, with kept versions protected separately.
+
+The default library lives at `~/Library/Application Support/Quill/library.sqlite`; Settings can move the complete library to a chosen folder. Portable `.quillbackup` files include definitions, history, retention, and draft checkpoints. Restore presents a review before applying changes. JSON import/export provides saved-definition interchange through one current schema. Corrupt data is surfaced and preserved.
+
+See [content, storage, and history](Documentation/CONTENT_AND_HISTORY.md) for recovery and backup behavior.
+
+## Native controls everywhere
+
+Quill uses SwiftUI split views, system toolbars, menus, SF Symbols, native panels, and a narrow AppKit text editor. Settings manages storage, history, appearance, menu/Dock behavior, launch at login, and expansion policy within the existing workspace.
+
+Abbreviation expansion starts paused on every launch. Explicit setup and session enablement are required, and only allowed applications with supported writable Accessibility text ranges can receive an expansion. The current engine handles plain-text root templates without fill-ins; secure input, password fields, unknown apps, and non-direct input methods are excluded. Permission-enabled target acceptance remains open.
+
+## Architecture
+
+Quill targets macOS 26 with Swift 6 complete strict concurrency.
+
+| Layer | Technology |
+| --- | --- |
+| Workspace and state | SwiftUI, Observation, shared library store |
+| Source editing and completion | AppKit `NSTextView`, shared typed completion catalog |
+| Template resolution | Pure bounded parser and renderer with literal inputs |
+| Markdown | Foundation semantics and native attributed text |
+| Persistence | Actor-owned SQLite transactions, immutable revisions, draft checkpoints |
+| Expansion | Consent-gated event monitoring and verified Accessibility replacement |
+| Updates | Sparkle 2.10.0; distribution configuration pending |
+
+The active library has one current storage schema, with no legacy migration or runtime storage fallback. Read the [architecture](Documentation/ARCHITECTURE.md) for ownership, rendering boundaries, and persistence decisions.
+
+## Build and verify
+
+Requires macOS 26 or later, Xcode 26 or later with the macOS 26 SDK, and Swift 6. Open `Quill.xcodeproj`, choose the shared **Quill** scheme, and run on **My Mac**, or use:
 
 ```sh
 ./script/build_and_run.sh
 ```
 
-Debug builds are ad-hoc signed for local development. DerivedData is under `~/Library/Developer/Xcode/DerivedData/Quill`. No signing team or distribution identity is inherited from Reccy. The committed Xcode project needs no generator; `project.yml` is its source specification and can be regenerated with XcodeGen when targets change.
+The committed Xcode project runs without a generator; `project.yml` is its XcodeGen source specification. Build artifacts live in external DerivedData. Debug builds use ad-hoc signing for local development; stable signing is required for reliable macOS permission acceptance.
 
-## Use
-
-Choose a group or Favorites, search, select a snippet, then edit the template. **Save Snippet (⌘S)** commits edits locally. **⌘N** creates a snippet; **⇧⌘D** toggles a saved snippet's favorite; **⌘Delete** requests deletion. Unsaved drafts survive navigation and are checkpointed for recovery. Normal quit flushes them; relaunch offers review and recovery. History beside Save compares and restores saved versions. Revert restores the saved snippet. Cmd-K opens Quick Actions for search, native fill-ins, resolved copying and library navigation. Repeat Last Copy retains the last chosen clipboard formats only in memory. Settings controls menu/Dock/window behavior, native launch-at-login registration, storage and expansion policy.
-
-Supported Quill syntax (not TextExpander's import syntax): `{{date}}`, `{{time}}`, `{{field:name}}`, `{{snippet:;sig}}`, and `{{cursor}}`. Type `{{` for native token completion, including partial names such as `{{ma`, `{{sni` and `{{ticket.re`. Snippet/macro dot prefixes are discovery aliases that complete to canonical colon references. The shared Insert menu inserts at the current selection or cursor with native text undo. Date is ISO calendar date and time uses 24-hour local time. Fill-in values are literal, never interpreted as macros. Copy is disabled while required fields are empty. Plain templates copy plain text; Markdown templates offer native formatted preview and HTML/RTF copying with a plain fallback, plus Copy As Markdown or Plain Text. Cursor offset is diagnostic; external cursor placement is implemented for supported AX editors, with runtime acceptance pending.
-
-The transactional SQLite library is at `~/Library/Application Support/Quill/library.sqlite` by default, or the location explicitly selected in Settings. Invalid templates may be saved for later repair; preview explains their validation errors. Abbreviation collisions are warnings for editing and errors when an ambiguous nested reference is resolved. Search does not change stored content. Manage Groups creates, renames or deletes groups while moving their snippets safely. Each meaningful item save creates a version; deletes remain recoverable. One current JSON schema is supported for explicit interchange; active storage is SQLite only. Settings offers retention, complete portable backups including history/drafts, reviewed restore, JSON import/export and verified complete storage relocation. Option-Command-Z undoes the last whole-library change when drafts are clear.
-
-## Verify and contribute
+Run the CI-equivalent gate with:
 
 ```sh
-./script/setup-repository.sh
 ./script/verify-ci.sh
 ```
 
-Setup configures only this repository's author, committer, hook path, and GitHub credential helper. GitHub operations use `./script/gh-quill.sh`, which pins and verifies dbuskariol without switching the globally active account. No remote or publishing is configured.
+The gate validates scripts, metadata, whitespace, a nonzero Swift Testing result, and an unsigned universal Release build. GitHub Actions runs it on macOS 26 Apple silicon and Intel. The latest local verification passed 76 tests across 11 suites and the universal Release build. See [verification evidence](Documentation/VERIFICATION.md) for observations and remaining acceptance.
 
-The gate checks script syntax, metadata, whitespace, Swift Testing results with a nonzero count, and an unsigned universal Release build. CI is prepared for macOS 26 Apple silicon and Intel, but has not run remotely. See Documentation/VERIFICATION.md for local observations and gaps.
+Repository maintainers use `./script/setup-repository.sh` to configure the required local author/committer identity and hooks. `./script/gh-quill.sh` pins GitHub operations to `dbuskariol` without changing the globally active account.
 
-See Documentation/PRODUCT_BRIEF.md, Documentation/FEATURE_MATRIX.md, and Documentation/ARCHITECTURE.md for scope and the next milestones. Reccy informed layout and engineering conventions; Quill is a separate repository with its own identity and no recording code.
+## Privacy
 
-## Expanded templates and expansion setup
+Templates, history, draft checkpoints, and fill-in values stay on the Mac. Quill does not upload content, log keystrokes, read the clipboard silently, or connect to Zendesk. Optional aggregate usage statistics are local and opt-in. Markdown preview does not fetch remote images. The last copied payload stays in process memory until cleared or the app quits.
 
-Typed controls: `{{input:notes|multiline}}`, `{{input:tone|choice|Formal|Friendly}}`, `{{input:extra|optional}}`, and `{{input:day|date|yyyy-MM-dd}}`. Conditions use `{{if:tone=Formal}}Hello{{else}}Hi{{end}}` and may nest. Custom ICU date formats and day offsets use `{{date:yyyy-MM-dd|7}}`; bounded arithmetic uses `{{math:(2+3)*4}}`. Field values remain literal.
+## Status and release
 
-**Library → Import from TextExpander…** imports CSV exports and older `.textexpander` group files through a dedicated review. Common date, cursor, nested-snippet and fill-in macros convert into Quill syntax. Review conversion warnings, choose snippets and skip or replace abbreviation conflicts. The import adds groups, backs up the saved library and supports Undo Last Library Change. Unsupported content stays excluded. See [migration compatibility and research](Documentation/TEXTEXPANDER_IMPORT.md).
+Quill is in active development. The library, embedded Settings, TextExpander import, reusable macros, Zendesk placeholders, native completion, Markdown copying, history, backups, and draft recovery are implemented. Full WYSIWYG editing, rich automatic expansion, cloud sync, and team libraries remain future work.
 
-Expansion is paused at every launch. In Settings → Expansion, review and explicitly request Accessibility and Input Monitoring access, add an allowed bundle identifier, refresh permission status, then enable for that session. Unknown apps, excluded apps, password fields, secure input and non-direct keyboard input methods are skipped. Supported editors must expose a writable Accessibility selected-text range. Only plain-text root templates without fill-ins expand automatically today. No clipboard read/paste or synthetic keystrokes are used. Unsupported or changed targets are left untouched where the editor permits; a failed insertion verification asks you to inspect the target and use its native Undo. Permission-enabled acceptance is still required.
-
-Sparkle 2.10.0 supplies the update system. This development build has no feed or public key, shows that prerequisite, and does not start update checks. See [release preparation](Documentation/RELEASE.md) for local packaging and exact external inputs, and [collaboration roadmap](Documentation/COLLABORATION_ROADMAP.md) for sync/team/client milestones.
-
-**Custom Macros** in the sidebar opens a searchable workspace editor for named reusable blocks, inserted with `{{macro:NAME}}`. **Insert → Zendesk Placeholder…** inserts message substitutions such as `{{ticket.requester.first_name}}` and custom ticket/user fields. Quill keeps Zendesk tokens unchanged for Zendesk to process; Preview explains this. See [custom macros and Zendesk placeholders](Documentation/MACROS.md).
-
-The app icon follows the dark rounded-square style of the other native apps, with a simple off-white quill and cyan nib. Its source is in `Design`; `script/build-icon.sh` regenerates the macOS icon asset sizes.
-
-See [workspace and UX map](Documentation/UX_MAP.md) for feature locations, navigation and completion behavior.
-
-Current storage, native Markdown and per-item revision history are described in [content and history](Documentation/CONTENT_AND_HISTORY.md).
+This is a development build. Permission-enabled expansion, Zendesk paste behavior, full accessibility acceptance, signing, and distribution still need acceptance. Update checks remain inactive until a signed feed and public key are configured. See [release preparation](Documentation/RELEASE.md), the [feature matrix](Documentation/FEATURE_MATRIX.md), and the [collaboration roadmap](Documentation/COLLABORATION_ROADMAP.md).
