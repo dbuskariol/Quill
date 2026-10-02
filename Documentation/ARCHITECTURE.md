@@ -43,3 +43,7 @@ See RELEASE.md for signed-update configuration and COLLABORATION_ROADMAP.md for 
 Feature placement and editing flow are documented in UX_MAP.md.
 
 The menu bar uses a narrow AppKit `NSStatusItem`/`NSMenu` controller. AppKit owns native menu tracking and dismissal; no custom click-outside event monitor or popover window exists. The SwiftUI lifecycle bridge supplies the shared window action, while the app-owned controller observes menu visibility and expansion state independently of library-window lifetime.
+
+## Compact expansion input — 0.1.3
+
+Fill-ins use a native nonactivating NSPanel anchored to the captured AX insertion-point bounds. The editor remains the frontmost application; Quill does not activate or raise its library. The panel can become key for its input controls but cannot become main. Native titlebar, fields, default/cancel actions and a bounded scroll area replace the centered preview dialog. Single-line Return submits, Command-Return submits multiline forms, and Escape or losing panel key focus cancels. Submission temporarily hides the retained form and validates the captured editor's focus, content and selection while AppKit returns keyboard focus, without activating another application or a fixed blind delay. On rejection, answers remain in the same small panel. Positioning converts AX display coordinates to AppKit coordinates and clamps to the target display's visible frame. Editors must expose insertion-point bounds for this anchored workflow.
