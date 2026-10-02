@@ -8,7 +8,7 @@ Quill is a native snippet library and template editor for macOS 26. It brings re
 
 <img src="Design/Quill-Icon-1024.png" alt="Quill app icon" width="128">
 
-![Quill’s native workspace with a support reply, reusable sign-off, Zendesk placeholders, and formatted Markdown preview](Documentation/Screenshots/library-workspace.png)
+![Quill’s native workspace with a welcome reply, Zendesk placeholders, and formatted Markdown preview](Documentation/Screenshots/library-workspace.png)
 
 Screenshots show the current development build using a separate sample library. Click an image to inspect it at full resolution.
 
@@ -135,7 +135,7 @@ Run the CI-equivalent gate with:
 ./script/verify-ci.sh
 ```
 
-The gate validates scripts, metadata, whitespace, a nonzero Swift Testing result, and an unsigned universal Release build. GitHub Actions runs it on macOS 26 Apple silicon and Intel. The latest local verification passed 94 tests across 14 suites and the universal Release build. See [verification evidence](Documentation/VERIFICATION.md) for observations and remaining acceptance.
+The gate validates scripts, metadata, whitespace, a nonzero Swift Testing result, and an unsigned universal Release build. GitHub Actions runs it on macOS 26 Apple silicon and Intel. The latest local verification passed 96 tests across 15 suites and the universal Release build. See [verification evidence](Documentation/VERIFICATION.md) and the [native UI audit](Documentation/UI_UX_AUDIT.md) for observations and remaining acceptance.
 
 Repository maintainers use `./script/setup-repository.sh` to configure the required local author/committer identity and hooks. `./script/gh-quill.sh` pins GitHub operations to `dbuskariol` without changing the globally active account.
 

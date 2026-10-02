@@ -10,9 +10,8 @@ struct DraftRecoveryView: View {
     var body: some View {
         VStack(spacing: 0) {
             HStack {
-                Text("Recover Unsaved Edits").font(.title2.bold())
+                Text("Recover Unsaved Edits").font(.title2.weight(.semibold))
                 Spacer()
-                Button("Review Later") { dismiss() }.keyboardShortcut(.cancelAction)
             }.padding(20)
             Divider()
             HSplitView {
@@ -45,9 +44,10 @@ struct DraftRecoveryView: View {
                         }.padding(20).frame(maxWidth: .infinity, alignment: .leading)
                     }
                 }.frame(minWidth: 440)
-            }
+            }.frame(height: 320)
             Divider()
             HStack {
+                Button("Review Later") { dismiss() }.keyboardShortcut(.cancelAction)
                 Button("Discard Draft…", role: .destructive) { confirmDiscard = true }.disabled(selected == nil)
                 Spacer()
                 Button("Recover Draft") {
@@ -55,7 +55,7 @@ struct DraftRecoveryView: View {
                 }.buttonStyle(.borderedProminent).disabled(selected == nil)
             }.padding(16)
             if let message = store.draftRecoveryMessage { Text(message).foregroundStyle(.red).padding(16) }
-        }.frame(minWidth: 740, minHeight: 520)
+        }.frame(width: 740)
             .onAppear { selectedID = store.recoveredDrafts.first?.id }
             .task(id: selectedID) {
                 guard let selected else { savedChanged = false; return }

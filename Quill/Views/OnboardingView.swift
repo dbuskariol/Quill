@@ -17,7 +17,7 @@ struct OnboardingView: View {
                     .font(.title2).fontWeight(.semibold)
                 Text(step == 0 ? "Two permissions let Quill expand text in other apps. Your library and copying work without them."
                      : step == 1 ? "Choose your applications and when Quill should run."
-                     : "Type ;now in a supported editor to try expansion. Press ⌘K to find snippets, macros and actions.")
+                     : "Type a saved abbreviation in a supported editor to try expansion. Press ⌘K to find snippets, macros and actions.")
                     .foregroundStyle(.secondary).fixedSize(horizontal: false, vertical: true)
             }
             if step == 0 {
@@ -27,7 +27,7 @@ struct OnboardingView: View {
                     ForEach(ExpansionPolicy.ApplicationScope.allCases) { Text($0.title).tag($0) }
                 }
                 if policy.applicationScope == .selected {
-                    ExpansionApplicationList(applications: policy.selectedApplications, emptyMessage: "Choose at least one application.", addLabel: "Add Application…", compact: true) {
+                    ExpansionApplicationList(applications: policy.selectedApplications, emptyMessage: "Choose at least one application.", addLabel: "Add Application…") {
                         policy.add($0, excluding: false)
                     } remove: { ids in policy.selectedApplications.removeAll { ids.contains($0.id) } }
                 }
@@ -59,8 +59,9 @@ struct OnboardingView: View {
                     .disabled(step == 0 ? !expansion.accessibilityGranted || !expansion.inputGranted : step == 1 && !policy.hasApplicationScope)
             }
         }
-        .padding(24).frame(width: 460)
+        .padding(20).frame(width: 460)
         .interactiveDismissDisabled()
+        .onExitCommand { preferences.setupDisposition = step == 2 ? .completed : .deferred; dismiss() }
         .onAppear {
             policy = expansion.policy
             if !policy.hasApplicationScope { policy.applicationScope = .all }

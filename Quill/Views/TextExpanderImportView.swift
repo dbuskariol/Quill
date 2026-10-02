@@ -19,9 +19,9 @@ struct TextExpanderImportView: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 16) {
             HStack {
-                Text("Import from TextExpander").font(.title2.bold())
+                Text("Import from TextExpander").font(.title2.weight(.semibold))
                 Spacer()
-                Button(plan == nil ? "Choose Files…" : "Choose Different Files…", action: chooseFiles).disabled(loading || importing)
+                if plan != nil { Button("Choose Different Files…", action: chooseFiles).disabled(loading || importing) }
             }
             if let error { Label(error, systemImage: "exclamationmark.triangle").foregroundStyle(.red).textSelection(.enabled) }
             if loading { ProgressView("Reading exports…").frame(maxWidth: .infinity, maxHeight: .infinity) }
@@ -65,26 +65,27 @@ struct TextExpanderImportView: View {
                                     Text("Quill template").font(.subheadline.bold())
                                     Text(converted).font(.system(.body, design: .monospaced)).textSelection(.enabled).frame(maxWidth: .infinity, alignment: .leading)
                                 }
-                            }.padding()
+                            }.padding().id(row.id)
                         } else { ContentUnavailableView("Select a Snippet", systemImage: "text.quote") }
                     }.frame(minWidth: 360)
-                }
+                }.frame(height: min(360, max(220, CGFloat(plan.rows.count) * 54)))
                 Text(plan.notices.joined(separator: " ")).font(.caption).foregroundStyle(.secondary).fixedSize(horizontal: false, vertical: true)
                 if let reviewError { Label(reviewError, systemImage: "exclamationmark.triangle").foregroundStyle(.orange).textSelection(.enabled) }
-                else if let review { Text("\(review.imported) snippets will be imported; \(review.skipped) conflicts skipped. Your saved library is backed up first.").font(.callout) }
+                else if let review { Text("\(review.imported) \(review.imported == 1 ? "snippet" : "snippets") will be imported; \(review.skipped) \(review.skipped == 1 ? "conflict" : "conflicts") skipped. Your saved library is backed up first.").font(.callout) }
             } else {
                 VStack(alignment: .leading, spacing: 12) {
                     Text("Export groups from TextExpander.com → Import/Export → Export, then choose the downloaded CSV files. Older .textexpander group files are also supported.")
                     Link("TextExpander export instructions", destination: URL(string: "https://textexpander.com/learn/using/importing-and-exporting-snippet-groups")!)
                     Text("Review snippets before importing. Common dates, cursor placement, nested snippets and fill-ins convert to Quill templates. Unsupported macros and scripts remain excluded; original files are never modified.").foregroundStyle(.secondary)
-                }.frame(maxHeight: .infinity, alignment: .top)
+                }
             }
             Divider()
             HStack {
                 Button("Cancel") { dismiss() }.keyboardShortcut(.cancelAction).disabled(importing)
                 Spacer()
                 if importing { ProgressView().controlSize(.small) }
-                Button("Import \(review?.imported ?? 0) Snippets") {
+                if plan == nil { Button("Choose Files…", action: chooseFiles).keyboardShortcut(.defaultAction).disabled(loading) } else {
+                Button("Import \(review?.imported ?? 0) \(review?.imported == 1 ? "Snippet" : "Snippets")") {
                     guard let plan else { return }
                     importing = true
                     Task {
@@ -94,8 +95,9 @@ struct TextExpanderImportView: View {
                     }
                 }.keyboardShortcut(.defaultAction)
                     .disabled(loading || importing || reviewError != nil || (review?.imported ?? 0) == 0 || store.isBusy || store.hasUnsavedChanges)
+                }
             }
-        }.padding(20).frame(minWidth: 820, idealWidth: 900, minHeight: 560, idealHeight: 660)
+        }.padding(20).frame(width: plan == nil ? 520 : 860)
             .onChange(of: selected) { _, _ in refreshReview() }
             .onChange(of: policy) { _, _ in refreshReview() }
             .onChange(of: store.library) { _, _ in refreshReview() }
@@ -120,10 +122,10 @@ struct TextExpanderImportView: View {
         panel.title = "Choose TextExpander Exports"; panel.prompt = "Review"
         panel.allowsMultipleSelection = true
         panel.allowedContentTypes = [.commaSeparatedText, UTType(filenameExtension: "textexpander") ?? .data, UTType(filenameExtension: "textexpanderlegacy") ?? .data]
-        guard panel.runModal() == .OK else { return }
-        let urls = panel.urls
-        loading = true; error = nil; review = nil; reviewError = nil
         Task {
+            guard await NativeFilePanel.present(panel) == .OK else { return }
+            let urls = panel.urls
+            loading = true; error = nil; review = nil; reviewError = nil
             do {
                 let imported = try await Task.detached(priority: .userInitiated) { try TextExpanderImporter.read(urls) }.value
                 plan = imported

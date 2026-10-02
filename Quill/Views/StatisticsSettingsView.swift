@@ -5,7 +5,7 @@ import UniformTypeIdentifiers
 struct StatisticsSettingsView: View {
     @Bindable var statistics: LocalStatistics
     let store: LibraryStore
-    @State private var confirmReset = false
+    let requestReset: () -> Void
     @State private var exportError: String?
     var body: some View {
         Section {
@@ -19,19 +19,15 @@ struct StatisticsSettingsView: View {
             Stepper("Typing baseline: \(Int(statistics.wordsPerMinute)) words/minute", value: $statistics.wordsPerMinute, in: 10...200, step: 5)
             HStack {
                 Button("Export Totals…", action: export)
-                Button("Reset Totals…", role: .destructive) { confirmReset = true }
+                Button("Reset Totals…", role: .destructive, action: requestReset)
             }
             if let exportError { Text(exportError).foregroundStyle(.red) }
         }
-        .alert("Reset Local Statistics?", isPresented: $confirmReset) {
-            Button("Cancel", role: .cancel) { }
-            Button("Reset", role: .destructive) { statistics.reset() }
-        } message: { Text("This clears the saved aggregate counts on this Mac.") }
     }
     private func export() {
         let panel = NSSavePanel(); panel.allowedContentTypes = [.json]; panel.nameFieldStringValue = "Quill Usage Totals.json"
-        guard panel.runModal() == .OK, let url = panel.url else { return }
         Task {
+            guard await NativeFilePanel.present(panel) == .OK, let url = panel.url else { return }
             do { try await store.exportStatistics(to: url); exportError = nil }
             catch { exportError = error.localizedDescription }
         }

@@ -8,6 +8,7 @@
 
 /* Begin PBXBuildFile section */
 		003671766C7BAE1D9BA41DA6 /* ZendeskPlaceholderPicker.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8DE4B622A0DFBA3B12F25A53 /* ZendeskPlaceholderPicker.swift */; };
+		05014B60A1BF138D6907251F /* NativeTextLayoutTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = DBE721F411ECB92AB75EB035 /* NativeTextLayoutTests.swift */; };
 		08E076E7D30C3805B573CE62 /* ItemRevision.swift in Sources */ = {isa = PBXBuildFile; fileRef = 964A324D1F5811C7D2A4B573 /* ItemRevision.swift */; };
 		0AB6CFB134E7ACF7AF89907D /* MarkdownDocument.swift in Sources */ = {isa = PBXBuildFile; fileRef = 692FBC3E190DFB62C39C62BC /* MarkdownDocument.swift */; };
 		0EDD57F9850F2CAB98640FB0 /* TextExpanderImportView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 46C213251585B10EC6D44B92 /* TextExpanderImportView.swift */; };
@@ -34,6 +35,7 @@
 		4A0416D40C61F2AA1886625F /* FormattedPreview.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1F5B317A492D6546CDD6759C /* FormattedPreview.swift */; };
 		4EE9E3913B2D59503B8E42CF /* WorkspaceView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 54273800CE29DB269D7ED3B5 /* WorkspaceView.swift */; };
 		51B77ED3FEDA302F88A428CA /* ExpansionPrompt.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5B1AA3600D111FDE72884935 /* ExpansionPrompt.swift */; };
+		5387142BAE1DC1C8B1EC9DF2 /* TemplateSourceSection.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6BA6F5C1802314C0E7BBB116 /* TemplateSourceSection.swift */; };
 		56BA9AA322E9F7AC4FC3D664 /* ArithmeticEvaluator.swift in Sources */ = {isa = PBXBuildFile; fileRef = FB0D76B097985DD5EFC10D83 /* ArithmeticEvaluator.swift */; };
 		573699A129E060F61B74F568 /* ExpansionDuration.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8382BC7ACDD64667FCDC6042 /* ExpansionDuration.swift */; };
 		593A58437D7CF90F6183B987 /* MenuBarLifecycleView.swift in Sources */ = {isa = PBXBuildFile; fileRef = CCB6EDE8A1D253BF6F57D9AB /* MenuBarLifecycleView.swift */; };
@@ -47,6 +49,7 @@
 		8BCBDDD1EB2DD6E371B23914 /* TemplateFieldsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A59A4125125DA0522AFA540D /* TemplateFieldsView.swift */; };
 		8CFA584173F782DB574CC20E /* LibraryStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8235836B0F21990349573F80 /* LibraryStore.swift */; };
 		913EBF1D61681950663EF33A /* QuillFileTypes.swift in Sources */ = {isa = PBXBuildFile; fileRef = AEC93ACE0AA68BE147EE75B2 /* QuillFileTypes.swift */; };
+		97470F3103A0AD43AE453D25 /* NativeTextMeasurement.swift in Sources */ = {isa = PBXBuildFile; fileRef = 607C797F673971650CA43D79 /* NativeTextMeasurement.swift */; };
 		98C3CC79E9BB96BD25D2E784 /* LibraryView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7856453D999AB5642CC2520D /* LibraryView.swift */; };
 		99ADB4EBA8AEA0726FB1476D /* LibraryRepositoryTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8BB216ACB9DACABCC2BEE340 /* LibraryRepositoryTests.swift */; };
 		9E7D6D138BD65D6654EB8D52 /* MarkdownTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 78EA94AE63AB6FDC9CB2CBA6 /* MarkdownTests.swift */; };
@@ -61,6 +64,7 @@
 		AAF9A04EDAC426DB1AB12659 /* TemplateInsertionMenu.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5D3B30878D2DCEDAC4D67202 /* TemplateInsertionMenu.swift */; };
 		AB9FA62A9D8A5DED4AEA73D3 /* TemplateEditor.swift in Sources */ = {isa = PBXBuildFile; fileRef = FBFD05FF484486457D80A2B2 /* TemplateEditor.swift */; };
 		AC9D1BA1D8F3A8B35F69FB0A /* ItemHistoryTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 36A15AFB30696396A6A1408C /* ItemHistoryTests.swift */; };
+		AD5C0367B5A424C39E659D88 /* NativeFilePanel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 26AC6C395DA8FAE97237EBD1 /* NativeFilePanel.swift */; };
 		AE561E4289B2FF7AD37DE0A8 /* Library.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4EE10E5ADFE801118D23CE86 /* Library.swift */; };
 		AE7F15C44F1052C4B837D50A /* TemplateRendererTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 470A1E9CA7101A12CE3A39D7 /* TemplateRendererTests.swift */; };
 		AEAD29F0C03D3671F7CE22CC /* SettingsPage.swift in Sources */ = {isa = PBXBuildFile; fileRef = CD92E750C77B6F3E8C73A139 /* SettingsPage.swift */; };
@@ -102,6 +106,7 @@
 		1F5B317A492D6546CDD6759C /* FormattedPreview.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FormattedPreview.swift; sourceTree = "<group>"; };
 		216B1D36E6238C8F6AC4650E /* TextExpanderImporter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TextExpanderImporter.swift; sourceTree = "<group>"; };
 		24A61353263C7DEEEF9E2481 /* AdvancedTemplateTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AdvancedTemplateTests.swift; sourceTree = "<group>"; };
+		26AC6C395DA8FAE97237EBD1 /* NativeFilePanel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NativeFilePanel.swift; sourceTree = "<group>"; };
 		2F4168A0471F49A66766FC7B /* AppPreferences.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppPreferences.swift; sourceTree = "<group>"; };
 		313E5884540DCC298017F7DC /* GroupManagementView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GroupManagementView.swift; sourceTree = "<group>"; };
 		336996DCF214DF4DABDC8C1C /* QuickActionStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = QuickActionStore.swift; sourceTree = "<group>"; };
@@ -123,9 +128,11 @@
 		565884DACA40B3F2F787F168 /* CommandSearch.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CommandSearch.swift; sourceTree = "<group>"; };
 		5B1AA3600D111FDE72884935 /* ExpansionPrompt.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ExpansionPrompt.swift; sourceTree = "<group>"; };
 		5D3B30878D2DCEDAC4D67202 /* TemplateInsertionMenu.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TemplateInsertionMenu.swift; sourceTree = "<group>"; };
+		607C797F673971650CA43D79 /* NativeTextMeasurement.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NativeTextMeasurement.swift; sourceTree = "<group>"; };
 		62F594EEA516914333FD54B0 /* SnippetEditor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SnippetEditor.swift; sourceTree = "<group>"; };
 		6415553270C70CABCA99ED6B /* DraftRecoveryView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DraftRecoveryView.swift; sourceTree = "<group>"; };
 		692FBC3E190DFB62C39C62BC /* MarkdownDocument.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MarkdownDocument.swift; sourceTree = "<group>"; };
+		6BA6F5C1802314C0E7BBB116 /* TemplateSourceSection.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TemplateSourceSection.swift; sourceTree = "<group>"; };
 		6C70B217AB3BB092D15FBA07 /* MenuBarController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MenuBarController.swift; sourceTree = "<group>"; };
 		7856453D999AB5642CC2520D /* LibraryView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LibraryView.swift; sourceTree = "<group>"; };
 		78EA94AE63AB6FDC9CB2CBA6 /* MarkdownTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MarkdownTests.swift; sourceTree = "<group>"; };
@@ -158,6 +165,7 @@
 		CCB6EDE8A1D253BF6F57D9AB /* MenuBarLifecycleView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MenuBarLifecycleView.swift; sourceTree = "<group>"; };
 		CD92E750C77B6F3E8C73A139 /* SettingsPage.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsPage.swift; sourceTree = "<group>"; };
 		DB38B12F348BB84460F2FAAE /* TemplateDiff.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TemplateDiff.swift; sourceTree = "<group>"; };
+		DBE721F411ECB92AB75EB035 /* NativeTextLayoutTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NativeTextLayoutTests.swift; sourceTree = "<group>"; };
 		E63B8C73540EFFADF039F27F /* CustomMacro.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CustomMacro.swift; sourceTree = "<group>"; };
 		E7EB99F86158B4CDA8393731 /* SoftwareUpdateController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SoftwareUpdateController.swift; sourceTree = "<group>"; };
 		EF0661609F29D765091326F4 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
@@ -215,6 +223,7 @@
 				8BB216ACB9DACABCC2BEE340 /* LibraryRepositoryTests.swift */,
 				B12F3349D882426BBF56BBF4 /* LocalStatisticsTests.swift */,
 				78EA94AE63AB6FDC9CB2CBA6 /* MarkdownTests.swift */,
+				DBE721F411ECB92AB75EB035 /* NativeTextLayoutTests.swift */,
 				4FECF8B7774B9247833E46ED /* RecoveryTests.swift */,
 				4B81D9E9BCAF1D3BE810904B /* TemplateCompletionTests.swift */,
 				470A1E9CA7101A12CE3A39D7 /* TemplateRendererTests.swift */,
@@ -247,6 +256,8 @@
 			children = (
 				0FAC0F07321E07093ADFB74A /* FormattedContent.swift */,
 				4C2419717B97D71B4BEA8D9C /* LibraryCommands.swift */,
+				26AC6C395DA8FAE97237EBD1 /* NativeFilePanel.swift */,
+				607C797F673971650CA43D79 /* NativeTextMeasurement.swift */,
 				AEC93ACE0AA68BE147EE75B2 /* QuillFileTypes.swift */,
 				B7702122506887042EC194BC /* TemplateInsertion.swift */,
 				449A4B6CDD3B84E33E4B9874 /* WorkspaceActivation.swift */,
@@ -322,6 +333,7 @@
 				A59A4125125DA0522AFA540D /* TemplateFieldsView.swift */,
 				8868F7E16A746E1D8F43DCF3 /* TemplateHistoryView.swift */,
 				5D3B30878D2DCEDAC4D67202 /* TemplateInsertionMenu.swift */,
+				6BA6F5C1802314C0E7BBB116 /* TemplateSourceSection.swift */,
 				46C213251585B10EC6D44B92 /* TextExpanderImportView.swift */,
 				54273800CE29DB269D7ED3B5 /* WorkspaceView.swift */,
 				8DE4B622A0DFBA3B12F25A53 /* ZendeskPlaceholderPicker.swift */,
@@ -480,6 +492,8 @@
 				0AB6CFB134E7ACF7AF89907D /* MarkdownDocument.swift in Sources */,
 				F31910F8677A9337605493A3 /* MenuBarController.swift in Sources */,
 				593A58437D7CF90F6183B987 /* MenuBarLifecycleView.swift in Sources */,
+				AD5C0367B5A424C39E659D88 /* NativeFilePanel.swift in Sources */,
+				97470F3103A0AD43AE453D25 /* NativeTextMeasurement.swift in Sources */,
 				E612D5F88F022B6D88B0AB58 /* OnboardingView.swift in Sources */,
 				5B8553D20DCAF37E06EF5BE4 /* PreviewView.swift in Sources */,
 				6EADF9BAD8B167609EE1A517 /* QuickActionStore.swift in Sources */,
@@ -500,6 +514,7 @@
 				1209F458C81ADF5C3D5BE27F /* TemplateInsertion.swift in Sources */,
 				AAF9A04EDAC426DB1AB12659 /* TemplateInsertionMenu.swift in Sources */,
 				2AF5ADD36B09E5810EA64CB4 /* TemplateRenderer.swift in Sources */,
+				5387142BAE1DC1C8B1EC9DF2 /* TemplateSourceSection.swift in Sources */,
 				0EDD57F9850F2CAB98640FB0 /* TextExpanderImportView.swift in Sources */,
 				C7F0282D661CCEF5B072B491 /* TextExpanderImporter.swift in Sources */,
 				A62788746091B6A31A5CDF02 /* TextExpanderMacroConverter.swift in Sources */,
@@ -522,6 +537,7 @@
 				99ADB4EBA8AEA0726FB1476D /* LibraryRepositoryTests.swift in Sources */,
 				D20F5C433AB58D8B9414D6C2 /* LocalStatisticsTests.swift in Sources */,
 				9E7D6D138BD65D6654EB8D52 /* MarkdownTests.swift in Sources */,
+				05014B60A1BF138D6907251F /* NativeTextLayoutTests.swift in Sources */,
 				A246EC17C34C630E1D404C58 /* RecoveryTests.swift in Sources */,
 				141859E7E8DE613A418A98BE /* TemplateCompletionTests.swift in Sources */,
 				AE7F15C44F1052C4B837D50A /* TemplateRendererTests.swift in Sources */,
@@ -627,7 +643,7 @@
 				CODE_SIGN_IDENTITY = "Developer ID Application: Daniel Buskariol (BJCVJ5G7MJ)";
 				CODE_SIGN_STYLE = Manual;
 				COPY_PHASE_STRIP = NO;
-				CURRENT_PROJECT_VERSION = 5;
+				CURRENT_PROJECT_VERSION = 6;
 				DEBUG_INFORMATION_FORMAT = dwarf;
 				DEVELOPMENT_TEAM = BJCVJ5G7MJ;
 				ENABLE_STRICT_OBJC_MSGSEND = YES;
@@ -647,7 +663,7 @@
 				GCC_WARN_UNUSED_FUNCTION = YES;
 				GCC_WARN_UNUSED_VARIABLE = YES;
 				MACOSX_DEPLOYMENT_TARGET = 26.0;
-				MARKETING_VERSION = 0.1.4;
+				MARKETING_VERSION = 0.1.5;
 				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
 				MTL_FAST_MATH = YES;
 				ONLY_ACTIVE_ARCH = YES;
@@ -713,7 +729,7 @@
 				CODE_SIGN_IDENTITY = "Developer ID Application: Daniel Buskariol (BJCVJ5G7MJ)";
 				CODE_SIGN_STYLE = Manual;
 				COPY_PHASE_STRIP = NO;
-				CURRENT_PROJECT_VERSION = 5;
+				CURRENT_PROJECT_VERSION = 6;
 				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
 				DEVELOPMENT_TEAM = BJCVJ5G7MJ;
 				ENABLE_NS_ASSERTIONS = NO;
@@ -727,7 +743,7 @@
 				GCC_WARN_UNUSED_FUNCTION = YES;
 				GCC_WARN_UNUSED_VARIABLE = YES;
 				MACOSX_DEPLOYMENT_TARGET = 26.0;
-				MARKETING_VERSION = 0.1.4;
+				MARKETING_VERSION = 0.1.5;
 				MTL_ENABLE_DEBUG_INFO = NO;
 				MTL_FAST_MATH = YES;
 				PRODUCT_NAME = "$(TARGET_NAME)";

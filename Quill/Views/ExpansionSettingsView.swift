@@ -74,7 +74,6 @@ struct ExpansionApplicationList: View {
     let applications: [ExpansionApplication]
     let emptyMessage: String
     let addLabel: String
-    var compact = false
     let add: ([ExpansionApplication]) -> Void
     let remove: (Set<String>) -> Void
     @State private var selection: Set<String> = []
@@ -92,7 +91,7 @@ struct ExpansionApplicationList: View {
             }
             .onDeleteCommand(perform: removeSelected)
             .listStyle(.inset)
-            .frame(height: compact ? min(140, max(60, CGFloat(applications.count) * 36)) : 140)
+            .frame(height: min(180, max(60, CGFloat(applications.count) * 36)))
             .overlay {
                 if applications.isEmpty {
                     Text(emptyMessage).foregroundStyle(.secondary)

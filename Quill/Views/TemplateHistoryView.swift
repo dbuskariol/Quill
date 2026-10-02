@@ -16,12 +16,13 @@ struct TemplateHistoryView: View {
     var body: some View {
         VStack(spacing: 0) {
             HStack {
-                Text(itemID == nil ? "Deleted Templates" : "History").font(.title2.bold())
+                Text(itemID == nil ? "Deleted Templates" : "History").font(.title2.weight(.semibold))
                 Spacer()
-                Button("Done") { dismiss() }.keyboardShortcut(.cancelAction)
             }.padding(20)
             Divider()
-            HSplitView {
+            if loading { ProgressView("Loading history…").frame(maxWidth: .infinity).frame(height: 180) }
+            else if revisions.isEmpty { ContentUnavailableView(itemID == nil ? "No Deleted Templates" : "No Versions Yet", systemImage: "clock.arrow.circlepath").frame(height: 180) }
+            else { HSplitView {
                 List(selection: $selectedID) {
                     ForEach(revisions) { revision in
                         VStack(alignment: .leading, spacing: 4) {
@@ -60,9 +61,11 @@ struct TemplateHistoryView: View {
                     } else if loading { ProgressView("Loading history…") }
                     else { ContentUnavailableView(itemID == nil ? "No Deleted Templates" : "No Versions Yet", systemImage: "clock.arrow.circlepath") }
                 }.padding(20).frame(minWidth: 430, maxWidth: .infinity)
+            }.frame(height: 360)
             }
             Divider()
             HStack {
+                Button("Done") { dismiss() }.keyboardShortcut(.cancelAction)
                 if let selected {
                     Button(selected.isProtected ? "Stop Keeping Version" : "Keep Version", systemImage: selected.isProtected ? "pin.slash" : "pin") {
                         Task { do { try await store.keepRevision(selected.id, keep: !selected.isProtected); await load() } catch { self.error = error.localizedDescription } }
@@ -73,7 +76,7 @@ struct TemplateHistoryView: View {
                 } else { Spacer() }
             }.padding(16)
             if let error { Text(error).foregroundStyle(.red).textSelection(.enabled).padding(.horizontal, 16).padding(.bottom, 12) }
-        }.frame(minWidth: 760, idealWidth: 900, minHeight: 560)
+        }.frame(width: 800)
             .task { await load() }
             .alert("Restore This Version?", isPresented: $confirmRestore) {
                 Button("Cancel", role: .cancel) {}

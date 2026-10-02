@@ -9,6 +9,7 @@ struct SnippetEditor: View {
     @State private var saved = false
     @State private var showZendesk = false
     @State private var templateEditor = TemplateEditorController()
+    @FocusState private var titleFocused: Bool
 
     init(store: LibraryStore, original: Snippet) {
         self.store = store
@@ -35,6 +36,11 @@ struct SnippetEditor: View {
                         Text("Title")
                         HStack {
                             TextField("Snippet title", text: $draft.title)
+                                .focused($titleFocused)
+                                .background(InputFocusOnPresentation(enabled: store.nameFocusRequest == draft.id) {
+                                    titleFocused = true
+                                    store.nameFocusRequest = nil
+                                })
                             Toggle(isOn: $draft.isFavorite) { Label("Favorite", systemImage: draft.isFavorite ? "star.fill" : "star") }
                                 .toggleStyle(.button).labelsHidden().help("Favorite").accessibilityLabel("Favorite")
                         }
@@ -53,22 +59,14 @@ struct SnippetEditor: View {
                         TextField("Comma-separated tags", text: Binding(get: { draft.tags.joined(separator: ", ") }, set: { draft.tags = $0.split(separator: ",", omittingEmptySubsequences: false).map { $0.trimmingCharacters(in: .whitespaces) } }))
                     }
                 }.textFieldStyle(.roundedBorder)
-                VStack(alignment: .leading, spacing: 8) {
-                    HStack {
-                        Text("Template").font(.headline)
-                        Spacer()
-                        TemplateInsertionMenu(library: store.library, excludingSnippet: original.id, insert: insertMacro, showZendesk: { showZendesk = true })
-                    }
-                    TemplateEditor(text: $draft.body, library: store.library, controller: templateEditor, excludingSnippet: original.id, accessibilityName: "Snippet template")
-                        .frame(height: 220)
-                }
+                TemplateSourceSection(text: $draft.body, library: store.library, controller: templateEditor, excludingSnippet: original.id, accessibilityName: "Snippet template", showZendesk: { showZendesk = true })
                 if !conflicts.isEmpty {
                     Label("Abbreviation also used by: \(conflicts.map(\.title).joined(separator: ", "))", systemImage: "exclamationmark.triangle")
                         .foregroundStyle(.orange).font(.callout)
                 }
                 PreviewView(result: result, fields: $fields, actions: store.quickActions)
 
-            }.padding(24)
+            }.padding(20)
         }
         .safeAreaInset(edge: .bottom) {
             VStack(spacing: 0) {
@@ -85,7 +83,7 @@ struct SnippetEditor: View {
                     }.keyboardShortcut("s").buttonStyle(.borderedProminent)
                         .disabled(!changed || store.isBusy || draft.title.trimmingCharacters(in: .whitespaces).isEmpty)
                 }
-                    .padding(.horizontal, 24).padding(.vertical, 12)
+                    .padding(.horizontal, 20).padding(.vertical, 12)
             }.background(.bar)
         }
         .navigationTitle(draft.title)

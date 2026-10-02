@@ -43,7 +43,7 @@ struct TemplateEditor: NSViewRepresentable {
         view.autoresizingMask = [.width]
         view.textContainer?.widthTracksTextView = true
         view.textContainer?.containerSize = NSSize(width: 0, height: CGFloat.greatestFiniteMagnitude)
-        view.minSize = NSSize(width: 0, height: 170)
+        view.minSize = NSSize(width: 0, height: 0)
         view.maxSize = NSSize(width: CGFloat.greatestFiniteMagnitude, height: CGFloat.greatestFiniteMagnitude)
         view.string = text
         view.setAccessibilityLabel(accessibilityName)
@@ -66,6 +66,13 @@ struct TemplateEditor: NSViewRepresentable {
             view.undoManager?.removeAllActions()
             view.setSelectedRange(NSRange(location: min(view.selectedRange().location, (text as NSString).length), length: 0))
         }
+    }
+    func sizeThatFits(_ proposal: ProposedViewSize, nsView scroll: NSScrollView, context: Context) -> CGSize? {
+        guard let width = proposal.width, width > 0, let view = scroll.documentView as? NSTextView,
+              let container = view.textContainer else { return nil }
+        let measured = NativeTextMeasurement.height(of: view.attributedString(), width: width - 2 * view.textContainerInset.width - 18, lineFragmentPadding: container.lineFragmentPadding)
+        let height = measured + 2 * view.textContainerInset.height + 4
+        return CGSize(width: width, height: min(280, max(120, height)))
     }
     static func dismantleNSView(_ scroll: NSScrollView, coordinator: Coordinator) {
         (scroll.documentView as? NSTextView)?.delegate = nil
