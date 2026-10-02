@@ -1,26 +1,32 @@
-# Foundation verification · 2 October 2026
+# Development verification · 2 October 2026
 
 ## Automated evidence
 
-- `script/verify-ci.sh`: passed. 14 Swift Testing tests in two suites; xcresult summary confirms totalTestCount 14, failedTests 0. Debug test host ad-hoc signed; unsigned Release contains arm64 and x86_64. Script syntax, plist and whitespace checks passed.
-- `script/build_and_run.sh --verify`: passed; rebuilt current Debug app, opened the .app bundle and confirmed the Quill process.
-- Host: Apple silicon arm64, macOS 27.0 build 26A5425a, Xcode 27.0 build 27A5228h. Deployment target is macOS 26.0. This is not direct runtime acceptance on macOS 26 or Intel.
-- Effective Git author and committer both Daniel Buskariol <32349796+dbuskariol@users.noreply.github.com>. Pinned GitHub API returned dbuskariol, ID 32349796, public name Daniel Buskariol. Mismatched author was rejected by the identity guard. Global gh active account was not switched.
+- `script/verify-ci.sh`: 46 Swift Testing tests in eight suites passed, with a nonzero count confirmed from xcresult. Debug test host is ad-hoc signed; unsigned universal Release contains arm64 and x86_64. Script syntax, native plist validation and whitespace checks passed.
+- `script/build_and_run.sh`: rebuilt and opened the current Debug bundle in external DerivedData; confirmed the Quill process. Compiled Info.plist points to AppIcon. The 1024-pixel icon has alpha; the asset catalog supplies every standard macOS 1x/2x icon size.
+- Host: Apple silicon arm64, macOS 27.0 build 26A5425a, Xcode 27.0 build 27A5228h. Deployment target remains macOS 26.0. Intel and macOS 26 runtime acceptance have not been performed.
+- Effective author and committer are Daniel Buskariol <32349796+dbuskariol@users.noreply.github.com>; the local identity guard passes. Earlier foundation verification checked GitHub dbuskariol, ID 32349796, without changing the global active account. No push or publishing was performed.
 
-Tests cover deterministic date/time, literal fields, UTF-16 cursor offsets, nested fields, cycles, malformed macros, missing/ambiguous references, atomic round-trip and replacement, corruption preservation, invalid-version rejection without replacement, failed writes, store state after a failed save, stable first-launch IDs, and create/favorite/delete persistence.
+Coverage includes the original deterministic renderer/persistence tests, typed input/conditional/date/math validation, corruption preservation and recovery, stale/concurrent writer refusal, protected export paths, group reassignment, history/undo, updater configuration guards, matching policy and Unicode UTF-16 boundaries, aggregate statistics consent/reset, CSV and legacy TextExpander migration, conflict handling, nested migration references/cycles, custom macro persistence/rename/cycles/drafts, Zendesk token/filter/escape preservation and Unicode-aware insertion at the editor selection.
 
-The initial generated project had no test source entries; the nonzero-count gate identified this, and project regeneration corrected it. The final suite contains 14 tests; an Xcode success banner alone is never used as proof. The gate uses native plutil for result checks, avoiding the host's broken pyenv Python shim.
+Libraries containing custom macros use schema v2, preserving older v1 read compatibility while preventing an older v1-only Quill build from silently stripping saved macros.
 
 ## Observed native UI
 
-Computer Use inspected actual Quill windows and screenshots. Verified three-column adaptive native layout, sample list/selection, live nested snippet preview, empty-field copy disabling and enabling after entry, resolved text visible in screenshots, tag search narrowing to Meeting notes, Cmd-N creation, title/abbreviation/body editing, Cmd-S saving, Cmd-Delete native confirmation and cancellation, Cmd-comma General/Privacy Settings, and quit/relaunch persistence. A harmless Getting started snippet was created in the local runtime library and retained after relaunch; this is separate from the committed five starter examples.
+Computer Use inspected real windows and screenshots. Settings uses the same workspace/window identifier as the library, reached from the bottom-left sidebar and Cmd-comma. Its horizontal category navigation follows Reccy’s reference, with native controls and selection accessibility traits. Redundant Settings category text, Local library badge, snippet-count footer and editor/instructional filler are gone. Group management is next to the Groups heading; Settings is the sole bottom action. Earlier navigation QA preserved an unsaved snippet draft and category selection; temporary edits were reverted.
 
-Some SwiftUI accessibility text snapshots retained old static text while screenshots showed updated preview text; editable values and enabled states updated. Full spoken VoiceOver acceptance remains open.
+A synthetic four-row TextExpander CSV was selected through the native open panel. Review showed original/converted text, a converted single-line fill-in, date warnings, a disabled unsupported clipboard macro and a saved-abbreviation conflict. The action correctly previewed two imported snippets and one skipped conflict. Review was cancelled, leaving the user library unchanged. Persisted import, backup and undo are exercised by isolated repository/store tests.
 
-## Remaining acceptance
+Custom Macros opens from the sidebar. A temporary draft combining a Zendesk requester placeholder and a local agent fill-in showed the correct resolved text and Zendesk preservation explanation. Copy Preview remained disabled until the local fill-in was supplied. The dedicated Zendesk picker opened from Insert Macro with descriptive choices and source reference. The QA macro was reverted before closing; no QA macro was saved and no clipboard copy or ticket submission was performed.
 
-No actual global expansion, key monitoring, permission request, clipboard read, script execution, cloud sync, remote publishing, or hardware-sensitive functionality was exercised or claimed. Menu bar route exists in code but its actual menu interaction remains untested. Full keyboard traversal, unsaved-quit alert, resizing extremes, Light appearance, increased contrast, reduced motion and spoken VoiceOver need a focused acceptance pass. Code/tests establish favorite/delete logic; UI deletion execution was not needed to inspect the confirmation/cancellation path.
+Foundation UI checks also exercised snippet search, Cmd-N creation, edit/Cmd-S save, favorite selection, nested previews, delete confirmation/cancellation and quit/relaunch persistence. The retained Getting started runtime snippet is separate from the committed five starter samples. Dynamic preview text and macro-name token text use stable-content identity to avoid stale SwiftUI static accessibility snapshots; a full spoken VoiceOver pass remains open.
 
-Unsigned universal Release compilation does not prove Intel runtime behavior. Prepared GitHub CI has not run because there is no remote. Stable signing, notarization, privacy permission identity and macOS 26 runtime acceptance are future gates. System test-host logs include unavailable linkd autoShortcut service messages and AppIntents metadata extraction was skipped because this app has no AppIntents dependency; no failing tests or Swift compiler errors remained.
+## Release and integration boundaries
 
-Saved-project registration is not exposed by the available Codex connector. Add `/Users/nftdannyboy/Documents/Codex/2026-10-02/quill` manually as a saved project; its local Run action is already configured.
+Expansion permission setup was not invoked and no Accessibility/Input Monitoring grants were made. Attempting enable without permissions remained paused with a setup explanation. Secure-input/focus protections and matching are covered in code/tests; actual external replacement, revoked permissions, IMEs and broad editor support require an explicit runtime acceptance session.
+
+Development-location login registration reports unavailable; installed-bundle login and actual menu-bar interactions remain untested. Sparkle is pinned and guarded but has no configured feed/public signing key. Local packaging guards rejected missing inputs and an invalid public key; Developer ID signing, notarization, real update/rollback/failure acceptance and publishing were not performed. See RELEASE.md for required inputs.
+
+Full keyboard traversal, Light appearance, increased contrast, reduced motion, compact/extreme resizing, spoken VoiceOver and real user-owned TextExpander export variants remain acceptance work. Prepared GitHub CI has not run because no remote is configured. Test-host linkd autoShortcut diagnostics and skipped AppIntents extraction are host messages; the verification gate had no failing tests or remaining Swift compiler errors.
+
+Broader product work is tracked honestly in FEATURE_MATRIX.md and COLLABORATION_ROADMAP.md; this development milestone does not establish full TextExpander parity or release readiness.

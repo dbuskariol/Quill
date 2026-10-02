@@ -2,12 +2,12 @@
 
 Working name, version 0.1.0. A native Mac workspace for reusable words: fast abbreviation expansion, reliable templates, and confidence about what will be inserted. The first audience is individuals managing personal and work snippets who value privacy and native keyboard workflows.
 
-The initial milestone is a runnable, tested library/editor and a full product plan. Success means snippets survive restart, failed writes remain visible and recoverable, templates can be inspected before copying, and basic editing is equally reachable from keyboard and controls. It is not a shipping TextExpander replacement.
+The current development milestone adds effective native preferences, revision recovery, typed preview forms, a command palette, a conservative consent-gated expansion engine and Sparkle integration to the tested library/editor. Success means snippets survive restart, failed writes remain visible and recoverable, templates can be inspected before copying, and basic editing is equally reachable from keyboard and controls. It is not a shipping TextExpander replacement.
 
 ## Product direction
 
-1. Library foundation (current): explicit save, local storage, search, favorites, typed rendering, dry-run fields, nested references and diagnostics.
-2. Safe Mac expansion: consent-led onboarding, abbreviation policies, per-app profiles, secure-input suspension, expansion transaction/recovery, and a native quick action palette.
+1. Library foundation (implemented): explicit save, local storage, search, favorites, typed rendering, dry-run fields, nested references and diagnostics.
+2. Safe Mac expansion (partial; runtime acceptance open): consent-led onboarding, abbreviation policies, per-app profiles, secure-input suspension, expansion transaction/recovery, and a native quick action palette.
 3. Advanced content and migration: rich text/images, reusable form schemas, conditional branches, date math, clipboard/key actions, trusted scripts, TextExpander migration with a loss report.
 4. Personal reliability: version history, undo across library transactions, reusable template test cases, local usage statistics, and opt-in on-device suggestions.
 5. Optional secure sync: independent threat model and key lifecycle before implementation. Shared/team permissions require conflict resolution, membership revocation, and audited writes.

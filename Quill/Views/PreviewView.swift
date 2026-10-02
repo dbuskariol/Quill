@@ -4,36 +4,73 @@ import SwiftUI
 struct PreviewView: View {
     let result: Result<RenderResult, Error>
     @Binding var fields: [String: String]
+    let actions: QuickActionStore
     @State private var copied = false
+    @State private var copyAttempted = false
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
             HStack {
-                Label("Dry-run Preview", systemImage: "play.rectangle").font(.headline)
+                Label("Preview", systemImage: "play.rectangle").font(.headline)
                 Spacer()
                 if case let .success(preview) = result {
                     Button(copied ? "Copied" : "Copy Preview") {
-                        NSPasteboard.general.clearContents()
-                        NSPasteboard.general.setString(preview.text, forType: .string)
-                        copied = true
-                    }.disabled(preview.fields.contains { fields[$0, default: ""].isEmpty })
+                        copyAttempted = true
+                        copied = actions.copy(preview.text)
+                    }.disabled(preview.fields.contains { name in fields[name, default: ""].isEmpty && (preview.fieldDefinitions.first { $0.name == name }?.isRequired ?? true) })
                 }
             }
+            if copyAttempted, !copied, let message = actions.message { Text(message).foregroundStyle(.red) }
             switch result {
             case let .success(preview):
+                if !preview.zendeskPlaceholders.isEmpty {
+                    Label("Zendesk fills these placeholders when it processes your comment. Quill copies them unchanged.", systemImage: "curlybraces")
+                        .font(.callout).foregroundStyle(.secondary)
+                }
                 ForEach(preview.fields, id: \.self) { name in
-                    TextField(name, text: Binding(get: { fields[name, default: ""] }, set: { fields[name] = $0 }))
-                        .textFieldStyle(.roundedBorder).accessibilityLabel("Preview field: \(name)")
+                    fieldControl(preview.fieldDefinitions.first { $0.name == name } ?? TemplateField(name: name))
                 }
                 Text(preview.text.isEmpty ? "Your preview will appear here." : preview.text)
+                    .id(preview.text)
                     .textSelection(.enabled).frame(maxWidth: .infinity, minHeight: 80, alignment: .topLeading)
                 if let offset = preview.cursorUTF16Offset {
-                    Text("Cursor marker at UTF-16 offset \(offset). Copy includes text only.").font(.caption).foregroundStyle(.secondary)
+                    Text("Cursor after \((preview.text as NSString).substring(to: offset).count) characters")
+                        .font(.caption).foregroundStyle(.secondary)
+                        .help("Used during expansion. Copy Preview copies text only.")
                 }
             case let .failure(error):
                 Label(error.localizedDescription, systemImage: "exclamationmark.triangle").foregroundStyle(.orange)
             }
         }.padding(16).background(.quaternary.opacity(0.4), in: RoundedRectangle(cornerRadius: 10))
-            .onChange(of: resultText) { _, _ in copied = false }
+            .onChange(of: resultText) { _, _ in copied = false; copyAttempted = false }
+    }
+    @ViewBuilder private func fieldControl(_ field: TemplateField) -> some View {
+        let binding = Binding(get: { fields[field.name, default: ""] }, set: { fields[field.name] = $0 })
+        switch field.kind {
+        case .singleLine, .optional:
+            TextField(field.kind == .optional ? "\(field.name) (optional)" : field.name, text: binding)
+                .textFieldStyle(.roundedBorder).accessibilityLabel("Preview field: \(field.name)")
+        case .multiline:
+            VStack(alignment: .leading) {
+                Text(field.name).font(.caption)
+                TextEditor(text: binding).frame(minHeight: 70).accessibilityLabel("Preview field: \(field.name)")
+            }
+        case let .choice(choices):
+            Picker(field.name, selection: binding) {
+                Text("Choose…").tag("")
+                ForEach(choices, id: \.self) { Text($0).tag($0) }
+            }
+        case .date:
+            DatePicker(field.name, selection: Binding(get: {
+                dateFormatter.date(from: binding.wrappedValue) ?? .now
+            }, set: { binding.wrappedValue = dateFormatter.string(from: $0) }), displayedComponents: .date)
+            if binding.wrappedValue.isEmpty {
+                Button("Use Today for \(field.name)") { binding.wrappedValue = dateFormatter.string(from: .now) }
+            }
+        }
+    }
+    private var dateFormatter: DateFormatter {
+        let formatter = DateFormatter(); formatter.locale = Locale(identifier: "en_US_POSIX"); formatter.dateFormat = "yyyy-MM-dd"
+        return formatter
     }
     private var resultText: String { (try? result.get().text) ?? "" }
 }

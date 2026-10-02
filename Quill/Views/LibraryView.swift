@@ -32,26 +32,22 @@ struct LibraryView: View {
             if let item = store.selected {
                 SnippetEditor(store: store, original: item).id(item.id)
             } else {
-                ContentUnavailableView("Your words, a shortcut away", systemImage: "text.quote", description: Text("Select a snippet to edit and preview its template."))
+                ContentUnavailableView("Select a Snippet", systemImage: "text.quote")
             }
         }
         .navigationSplitViewStyle(.balanced)
         .searchable(text: $store.search, prompt: "Search snippets and tags")
         .toolbar {
             ToolbarItem {
+                Button { store.showQuickActions = true } label: { Label("Quick Actions", systemImage: "command") }
+                    .help("Quick Actions (⌘K)").disabled(!store.isLoaded || store.isBusy)
+            }
+            ToolbarItem {
                 Button { Task { await store.create() } } label: { Label("New Snippet", systemImage: "plus") }
                     .help("New Snippet (⌘N)").disabled(store.isBusy || !store.isLoaded)
             }
         }
         .frame(minWidth: 940, minHeight: 580)
-        .alert("Delete Snippet?", isPresented: Binding(get: { store.pendingDelete != nil }, set: { if !$0 { store.pendingDelete = nil } }), presenting: store.pendingDelete) { item in
-            Button("Cancel", role: .cancel) { store.pendingDelete = nil }
-            Button("Delete", role: .destructive) { store.pendingDelete = nil; Task { await store.delete(item) } }
-        } message: { item in Text("“\(item.title)” will be removed from your local library. Other snippets that reference it may need updating.") }
-        .alert("Library Needs Attention", isPresented: Binding(get: { store.errorMessage != nil }, set: { if !$0 { store.errorMessage = nil } })) {
-            if !store.isLoaded { Button("Retry") { Task { await store.load() } } }
-            Button("OK", role: .cancel) { store.errorMessage = nil }
-        } message: { Text(store.errorMessage ?? "") }
         .onChange(of: store.visible.map(\.id)) { _, ids in
             if !ids.contains(store.selectedID ?? UUID()) { store.selectedID = ids.first }
         }
