@@ -42,3 +42,7 @@ Expansion Settings offers All Applications or Selected Applications. Selected ap
 Snippet and macro source sections share their insertion menu, native editor and content-driven measurement. Measurement runs in an independent text system so sizing cannot mutate a live editor during layout. New items request name focus through the shared window-ready lifecycle; ordinary selection does not request focus. Short source/preview content avoids fixed blank regions and long content scrolls within bounds.
 
 Native file panels attach to the requesting window, including an already-present review sheet, without a blocking app-modal loop. Review footers keep secondary dismissal actions on the left and the primary commit on the right. Template History and Library Backups are distinct Settings sections because their recovery scope differs. See [the native audit](UI_UX_AUDIT.md) for observed coverage and limits.
+
+## Insertion choice — 0.1.6
+
+Expansion settings and setup explain Direct Accessibility versus Native Paste beside the insertion-method picker. Selecting Native Paste authorizes temporary local clipboard preservation; it is never enabled silently for existing installations. Scope remains a separate visible choice. Native Paste retains the same compact fill-in form even without caret geometry, anchoring beside the pointer instead. Status distinguishes confirmed replacement from a paste sent to an opaque editor. Clipboard formats that cannot be preserved produce an actionable error before text selection.

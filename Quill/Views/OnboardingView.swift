@@ -7,6 +7,7 @@ struct OnboardingView: View {
     @Environment(\.dismiss) private var dismiss
     @State private var step = 0
     @State private var policy = ExpansionPolicy()
+    @State private var method = ExpansionInsertionMethod.nativePaste
     @State private var resume = true
     @State private var launchAtLogin = false
     @State private var error: String?
@@ -33,6 +34,10 @@ struct OnboardingView: View {
                 }
                 Text("Password fields and excluded applications never expand. Change exclusions in Settings → Expansion.")
                     .font(.caption).foregroundStyle(.secondary)
+                Picker("Insert using", selection: $method) {
+                    ForEach(ExpansionInsertionMethod.allCases) { Text($0.title).tag($0) }
+                }
+                Text(method.explanation).font(.caption).foregroundStyle(.secondary)
                 Toggle("Enable expansion every time Quill opens", isOn: $resume)
                 Toggle("Launch Quill at login", isOn: $launchAtLogin)
                 Text(preferences.quitWhenLastWindowCloses ? "Closing Quill’s last window quits it. Change this in General settings if you want to keep expansion running." : "Closing the library keeps Quill running. You can pause expansion at any time.")
@@ -73,6 +78,7 @@ struct OnboardingView: View {
         error = nil
         if step == 0 { step = 1 }
         else if step == 1 {
+            expansion.insertionMethod = method
             expansion.policy = policy
             expansion.duration = resume ? .always : .untilQuit
             expansion.enable()
