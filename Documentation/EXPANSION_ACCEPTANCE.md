@@ -135,3 +135,12 @@ All six published assets were fetched anonymously through fresh latest-download 
 ### 0.1.4 restart persistence
 
 On 2026-10-02, the setup flow explicitly enabled Every Time Quill Opens using the existing Accessibility and Input Monitoring grants and TextEdit-only scope. After normal Quit and relaunch, Expansion settings showed enabled, the selected persistent duration and Pause without pressing Enable again. Setup completion did not reappear automatically. The shared expansion engine was unchanged; broader external-editor, physical Undo and input-method coverage remains as recorded above.
+
+
+## 0.1.6 compatibility repair — 5 November 2026
+
+Native Paste is a new, explicitly chosen insertion method. It removes the writable-AX-selection prerequisite and shares matching, rendering, input panels, application policy and secure-input protections with Direct Accessibility. Existing method preferences are not silently changed. The installed settings inspection confirmed both grants, Native Paste selection, explicit Enable and All Applications with the existing exclusions; scope had previously been TextEdit only.
+
+A separate temporary SQLite library and owned `/tmp/Quill-0.1.6-Compatibility/native-editor.txt` were used. Directed Computer Use typing and individual key actions left `;now` literal, as in the earlier audit, so this automation session does not establish hardware-triggered native paste or external Undo/IME/browser acceptance. No bypass for synthetic test input was introduced. Do not infer universal editor compatibility from the native settings check or unit tests.
+
+Regression coverage uses isolated owned pasteboards: multi-item/private formats, ownership/newer copy, changed snapshot, empty clipboard, concealed/promised/oversized rejection; bounded Unicode suffix matching and reset/boundary behavior; editable-target roles, cursor character boundaries and keyboard payload/delimiter translation. Final distribution evidence is recorded in VERIFICATION.md.

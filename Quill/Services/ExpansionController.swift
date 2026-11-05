@@ -1,11 +1,13 @@
 import AppKit
 import ApplicationServices
 import Carbon
+import Combine
 import Observation
 
 @MainActor @Observable final class ExpansionController {
     var policy: ExpansionPolicy {
         didSet {
+            resetTyping()
             persistPolicy()
             pending?.cancel()
             prompt.cancel(); awaitingFields = false; formTransaction = nil
@@ -35,11 +37,33 @@ import Observation
     private var awaitingFields = false
     private var formTransaction: UUID?
     private var pending: Task<Void, Never>?
+    private var typing = ExpansionTypingBuffer()
+    private var typingFocus: AXUIElement?
+    private var typingPID: pid_t?
+    private var lastTypingTime: UInt64 = 0
+    private var inserting = false
+    private var activationObservation: AnyCancellable?
+    var insertionMethod: ExpansionInsertionMethod {
+        didSet {
+            defaults.set(insertionMethod.rawValue, forKey: "expansionInsertionMethod")
+            pending?.cancel(); prompt.cancel(); awaitingFields = false; formTransaction = nil
+            resetTyping()
+        }
+    }
+    private func resetTyping() { typing.reset(); typingFocus = nil; typingPID = nil }
 
     init(store: LibraryStore, defaults: UserDefaults = .standard) {
         self.store = store; self.defaults = defaults
+        insertionMethod = defaults.string(forKey: "expansionInsertionMethod").flatMap(ExpansionInsertionMethod.init(rawValue:)) ?? .directText
         policy = defaults.data(forKey: "expansionPolicy").flatMap { try? JSONDecoder().decode(ExpansionPolicy.self, from: $0) } ?? ExpansionPolicy()
         duration = defaults.string(forKey: "expansionDuration").flatMap(ExpansionDuration.init(rawValue:)) ?? .untilQuit
+        activationObservation = NSWorkspace.shared.notificationCenter.publisher(for: NSWorkspace.didActivateApplicationNotification)
+            .receive(on: RunLoop.main).sink { [weak self] _ in
+                MainActor.assumeIsolated {
+                    self?.resetTyping()
+                    if self?.inserting == false { self?.pending?.cancel() }
+                }
+            }
         refreshPermissions()
         // Resuming is opt-in: a successful explicit Enable with Across Launches arms this.
         if duration == .always && defaults.bool(forKey: "expansionAcrossLaunches") { enable() }
@@ -72,7 +96,8 @@ import Observation
         guard accessibilityGranted, inputGranted else { status = "Grant both permissions through Setup, then refresh. No monitoring started."; return }
         guard policy.hasApplicationScope else { status = "Choose an application or select All Applications first."; return }
         guard tap == nil else { configureDuration(); return }
-        let mask = CGEventMask(1 << CGEventType.keyDown.rawValue)
+        let mask = [CGEventType.keyDown, .leftMouseDown, .rightMouseDown, .otherMouseDown, .scrollWheel, .flagsChanged]
+            .reduce(CGEventMask(0)) { $0 | (1 << $1.rawValue) }
         let callback: CGEventTapCallBack = { _, type, event, context in
             guard let context else { return Unmanaged.passUnretained(event) }
             // The source is installed exclusively in the main run loop.
@@ -110,48 +135,83 @@ import Observation
         expiration?.cancel(); expiration = nil; endsAt = nil
         defaults.set(false, forKey: "expansionAcrossLaunches")
         pending?.cancel(); pending = nil
+        resetTyping()
         prompt.cancel(); awaitingFields = false; formTransaction = nil
         if let source { CFRunLoopRemoveSource(CFRunLoopGetMain(), source, .commonModes) }
         if let tap { CGEvent.tapEnable(tap: tap, enable: false); CFMachPortInvalidate(tap) }
         source = nil; tap = nil; isEnabled = false; status = "Paused. No input monitoring is active."
     }
     private func receive(_ type: CGEventType, event: CGEvent) {
+        // Generated selection/paste keys must never recursively match or cancel their transaction.
+        guard event.getIntegerValueField(.eventSourceUserData) != PasteExpansionTarget.eventMarker else { return }
+        if type != .keyDown && type != .tapDisabledByTimeout && type != .tapDisabledByUserInput {
+            if type != .flagsChanged || !event.flags.intersection([.maskCommand, .maskControl, .maskAlternate]).isEmpty {
+                resetTyping()
+                if !inserting { pending?.cancel(); pending = nil }
+            }
+            return
+        }
+        guard !inserting else { resetTyping(); return }
         pending?.cancel(); pending = nil
         if type == .tapDisabledByTimeout || type == .tapDisabledByUserInput {
             pause(); status = "macOS stopped monitoring. Enable again after reviewing permissions."; return
         }
         guard isEnabled, !awaitingFields else { return }
         refreshPermissions()
-        guard isEnabled, !IsSecureEventInputEnabled() else { status = "Suspended while secure input is active."; return }
+        guard isEnabled, !IsSecureEventInputEnabled() else { resetTyping(); status = "Suspended while secure input is active."; return }
         guard event.flags.intersection([.maskCommand, .maskControl, .maskAlternate]).isEmpty,
               event.getIntegerValueField(.keyboardEventAutorepeat) == 0,
               let app = NSWorkspace.shared.frontmostApplication, let bundleID = app.bundleIdentifier,
-              bundleID != Bundle.main.bundleIdentifier, policy.allows(bundleID) else { return }
-        var units = [UniChar](repeating: 0, count: 8)
-        var count = 0
-        event.keyboardGetUnicodeString(maxStringLength: units.count, actualStringLength: &count, unicodeString: &units)
-        let characters = String(utf16CodeUnits: units, count: count)
+              bundleID != Bundle.main.bundleIdentifier, policy.allows(bundleID) else { resetTyping(); return }
+        let characters = ExpansionKeyboardText.characters(for: event)
         let key = event.getIntegerValueField(.keyboardEventKeycode)
         // IME candidate keystrokes are not committed text. Inspect only after Return commits.
-        guard isDirectKeyboardLayout() || Self.isCompositionCommit(key) else { return }
-        guard Self.isTextTrigger(key: key, characters: characters, policy: policy) else { return }
+        guard isDirectKeyboardLayout() || Self.isCompositionCommit(key) else { resetTyping(); return }
         let pid = app.processIdentifier
-        guard let originalFocus = AccessibilityTextTarget.focusedElement(pid: pid) else { return }
+        guard let originalFocus = AccessibilityTextTarget.focusedElement(pid: pid) else { resetTyping(); return }
+        if typingPID != pid || typingFocus.map({ !CFEqual($0, originalFocus) }) ?? true || event.timestamp &- lastTypingTime > 5_000_000_000 {
+            typing.reset(atBeginning: PasteExpansionTarget.capture(pid: pid)?.selection?.location == 0)
+        }
+        typingPID = pid; typingFocus = originalFocus; lastTypingTime = event.timestamp
+        if key == kVK_Delete { typing.backspace(); return }
+        guard !Self.nonTextKeys.contains(key) else { resetTyping(); return }
+        if characters.isEmpty { typing.reset() } else { typing.append(characters) }
+        guard Self.isTextTrigger(key: key, characters: characters, policy: policy) else { return }
+        let buffered = typing
+        let method = insertionMethod
         pending = Task { [weak self] in
             do { try await Task.sleep(for: .milliseconds(45)) } catch { return }
             guard let self, !Task.isCancelled, self.isEnabled, !self.store.isBusy,
                   self.policy.allows(bundleID) else { return }
-            guard let target = AccessibilityTextTarget.capture(pid: pid) else {
-                self.status = "\(app.localizedName ?? "This application") does not expose a writable text selection to Quill, or its input is protected."
+            let destination: ExpansionDestination?
+            switch method {
+            case .directText: destination = AccessibilityTextTarget.capture(pid: pid).map(ExpansionDestination.direct)
+            case .nativePaste: destination = PasteExpansionTarget.capture(pid: pid).map(ExpansionDestination.paste)
+            }
+            guard let target = destination else {
+                self.resetTyping()
+                self.status = method == .directText
+                    ? "\(app.localizedName ?? "This editor") does not expose writable text. Choose Native Paste in Expansion settings for broader compatibility."
+                    : "\(app.localizedName ?? "This editor") does not expose a safe editable field, or its input is protected."
                 return
             }
-            guard CFEqual(target.element, originalFocus),
-                  let match = AbbreviationMatcher.match(text: target.text, caret: target.selection.location, library: self.store.library, policy: self.policy),
+            guard CFEqual(target.element, originalFocus) else { self.resetTyping(); return }
+            let match: ExpansionMatch?
+            let source: String
+            if let text = target.text, let caret = target.caret {
+                source = text
+                match = AbbreviationMatcher.match(text: text, caret: caret, library: self.store.library, policy: self.policy)
+            } else {
+                source = buffered.text
+                match = buffered.match(library: self.store.library, policy: self.policy)
+            }
+            guard let match, let range = Range(match.range, in: source),
                   let snippet = self.store.library.snippets.first(where: { $0.id == match.snippetID }) else { return }
+            let suffix = String(source[range])
             do {
                 let rendered = try TemplateRenderer.render(snippet, library: self.store.library)
                 if rendered.fields.isEmpty {
-                    try self.insert(rendered, target: target, match: match, snippet: snippet)
+                    try await self.insert(rendered, target: target, match: match, suffix: suffix, snippet: snippet)
                 } else {
                     let anchor = try target.insertionBounds()
                     self.awaitingFields = true
@@ -174,7 +234,7 @@ import Observation
                             throw LibraryError.invalid("Expansion was paused or its application settings changed.")
                         }
                         do {
-                            try self.insert(result, target: target, match: match, snippet: snippet)
+                            try await self.insert(result, target: target, match: match, suffix: suffix, snippet: snippet)
                             self.awaitingFields = false; self.formTransaction = nil
                         } catch {
                             self.status = error.localizedDescription
@@ -185,12 +245,18 @@ import Observation
             } catch { self.status = error.localizedDescription }
         }
     }
-    private func insert(_ result: RenderResult, target: AccessibilityTextTarget, match: ExpansionMatch, snippet: Snippet) throws {
+    private func insert(_ result: RenderResult, target: ExpansionDestination, match: ExpansionMatch, suffix: String, snippet: Snippet) async throws {
         // Accessibility insertion and cursor preview share the exact visible-text projection.
         let output = try result.plainTextResult()
-        try target.replace(match, with: output)
-        store.statistics.recordExpansion(outputCharacters: output.text.count, abbreviationCharacters: snippet.abbreviation.count)
-        status = "Expanded \(snippet.title)."
+        inserting = true
+        defer { inserting = false; resetTyping() }
+        let inserted = try await target.replace(match, suffix: suffix, with: output)
+        if inserted.confirmed {
+            store.statistics.recordExpansion(outputCharacters: output.text.count, abbreviationCharacters: snippet.abbreviation.count)
+            status = inserted.cursorPlaced ? "Expanded \(snippet.title)." : "Expanded \(snippet.title), but this editor could not position the cursor."
+        } else {
+            status = "Sent \(snippet.title) using native paste. This editor does not confirm its text; check the result."
+        }
     }
     private static let nonTextKeys: Set<Int64> = Set([
         kVK_Delete, kVK_ForwardDelete, kVK_Escape, kVK_Help,

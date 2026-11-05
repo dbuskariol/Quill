@@ -22,6 +22,12 @@ struct ExpansionSettingsView: View {
         Section("Permission Setup") {
             ExpansionPermissionControls(expansion: expansion)
         }
+        Section("Insertion") {
+            Picker("Insert using", selection: $expansion.insertionMethod) {
+                ForEach(ExpansionInsertionMethod.allCases) { Text($0.title).tag($0) }
+            }
+            Text(expansion.insertionMethod.explanation).font(.caption).foregroundStyle(.secondary)
+        }
         Section("Matching") {
             Picker("Expand abbreviations", selection: $expansion.policy.trigger) {
                 ForEach(ExpansionPolicy.Trigger.allCases) { Text($0.title).tag($0) }

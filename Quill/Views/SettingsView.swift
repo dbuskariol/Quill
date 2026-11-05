@@ -148,7 +148,7 @@ struct SettingsView: View {
     private var privacy: some View {
         Group {
             Section("Local Data") {
-                Text("Quill does not upload snippets, read the clipboard, or retain keystroke logs. Optional aggregate usage totals stay on this Mac. Authored drafts are checkpointed for recovery; fill-in values and resolved previews are never saved to history. Copy writes only when you choose it.")
+                Text("Quill does not upload snippets or retain keystroke logs. Native Paste expansion uses the clipboard only when you choose that insertion method, restoring its contents unless you copy something newer. Optional aggregate usage totals stay on this Mac. Authored drafts are checkpointed for recovery; fill-in values and resolved previews are never saved to history. Copy writes only when you choose it.")
             }
             Section("Expansion Permissions") {
                 Text("Expansion starts only after you grant access through the Expansion setup controls and explicitly enable it. Every Time Quill Opens resumes expansion only after you choose that mode and enable it. Secure input and password fields are excluded.")
